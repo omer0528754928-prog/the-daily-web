@@ -1,0 +1,27 @@
+{
+  "name": "the-daily-web",
+  "version": "1.0.0",
+  "description": "A news platform for creating, managing, reviewing, and publishing articles.",
+  "homepage": "https://github.com/omer0528754928-prog/the-daily-web#readme",
+  "bugs": {
+    "url": "https://github.com/omer0528754928-prog/the-daily-web/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omer0528754928-prog/the-daily-web.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "connect-mongo": "^6.0.0",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "mongoose": "^9.10.1"
+  }
+}
