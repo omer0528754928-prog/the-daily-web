@@ -1,0 +1,76 @@
+<%
+  // Sample data from the design. When the route passes real data, it is used instead.
+  const article = locals.article || {
+    id: locals.id || 14,
+    title: 'עומסי הבוקר: המסלולים שהשתנו החודש',
+    reporter: 'דנה לוי',
+    category: 'חדשות',
+    updated: 'לפני 40 דקות',
+    status: 'ממתינה לאישור',
+    live: 'גרסה 3 · מפורסמת מ־10.09',
+    pending: 'גרסה 4',
+  };
+  const isUpdate = article.live !== '—';
+  const hasPending = article.pending !== '—';
+  // After the editor clicks a button, the route can pass result: 'approved' or 'returned'
+  const result = locals.result;
+%>
+<%- include('partials/head', { title: 'בדיקת כתבה' }) %>
+<%- include('partials/header', { active: 'editor' }) %>
+
+<main class="container container--form page">
+  <form method="post" class="card form-card">
+    <div class="form-card__head">
+      <div class="form-card__heading">
+        <h1>בדיקת כתבה לאישור פרסום</h1>
+        <p><%= article.reporter %> · <%= article.category %> · הוגש <%= article.updated %></p>
+      </div>
+      <span class="status" data-status="<%= article.status %>"><%= article.status %></span>
+    </div>
+
+    <div class="form-card__body">
+      <h2 class="review__title"><%= article.title %></h2>
+
+      <% if (isUpdate) { %>
+        <div class="compare">
+          <div class="compare__col compare__col--live">
+            <div class="compare__label">מוצג לציבור כרגע</div>
+            <strong><%= article.live %></strong>
+            <p class="hint"><%= hasPending ? 'ממשיכה להיות מוצגת עד שהעדכון יאושר.' : 'זו הגרסה העדכנית המוצגת לציבור.' %></p>
+          </div>
+          <% if (hasPending) { %>
+            <div class="compare__col compare__col--pending">
+              <div class="compare__label">ממתין לאישור</div>
+              <strong><%= article.pending %></strong>
+              <p class="hint">עדכון של כתבה שפורסמה — עובר את אותו תהליך אישור.</p>
+            </div>
+          <% } %>
+        </div>
+      <% } %>
+
+      <label class="field">הערת עורך לכתב/ת
+        <textarea name="note" rows="4" placeholder="מה צריך לתקן? ההערה תוצג לכתב/ת באזור הכתב."></textarea>
+      </label>
+
+      <% if (result === 'approved') { %>
+        <div class="alert alert-success">הכתבה אושרה ופורסמה — הגרסה החדשה מוצגת כעת לציבור, והגרסה הקודמת נשמרה בהיסטוריית הגרסאות.</div>
+      <% } else if (result === 'returned') { %>
+        <div class="alert alert-warning">הכתבה הוחזרה לכתב/ת לתיקונים עם ההערה שנכתבה. עד לאישור מחדש, הגרסה שאושרה בעבר ממשיכה להיות מוצגת לציבור.</div>
+      <% } %>
+    </div>
+
+    <div class="form-card__foot">
+      <% if (hasPending) { %>
+        <div class="form-card__submit">
+          <button type="submit" formaction="/editor/articles/<%= article.id %>/approve" class="btn btn-success">אישור ופרסום</button>
+          <button type="submit" formaction="/editor/articles/<%= article.id %>/return" class="btn btn-warning">החזרה לתיקונים</button>
+        </div>
+      <% } else { %>
+        <span class="hint">אין גרסה שממתינה לאישור — הגרסה המפורסמת היא העדכנית.</span>
+      <% } %>
+      <a href="/editor" class="btn btn-outline btn-push">חזרה לתור</a>
+    </div>
+  </form>
+</main>
+
+<%- include('partials/footer') %>
