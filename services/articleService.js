@@ -1,5 +1,5 @@
 const Article = require('../models/Article');
-const { STATUS, EDITABLE_STATUSES, SUBMITTABLE_STATUSES } = require('../config/articleStatus');
+const { STATUS, EDITABLE_STATUSES, REPORTER_TRANSITIONS, canTransition } = require('../config/articleStatus');
 const { HttpError } = require('../utils/HttpError');
 const {
   validateDraft,
@@ -60,33 +60,38 @@ function differsFromLive(content, image, liveVersion) {
   return CONTENT_FIELDS.some(field => content[field] !== liveVersion[field]) || image !== liveVersion.image;
 }
 
-// Creates a new article as a draft, or sends it straight to the editor when submit is true
+// Every article starts as a draft. With submit: true it is then sent to the editor,
+// which is the normal Draft -> Pending change, so no article skips the draft step.
 async function createArticle(authorId, input, file, { submit = false } = {}) {
+  // Checked before creating, so an incomplete article does not leave a stray draft behind
   const { content, image } = validateInput({ content: input, file }, { submit, canRepublish: false });
 
   const imageUrl = image ? await saveArticleImage(image) : null;
+  let article;
   try {
-    const article = await Article.create({
+    article = (await Article.create({
       ...content,
       image: imageUrl,
       author: authorId,
       version: 1,
-      status: submit ? STATUS.PENDING : STATUS.DRAFT,
-      submittedAt: submit ? new Date() : undefined,
-    });
-    return article.toObject();
+      status: STATUS.DRAFT,
+    })).toObject();
   } catch (error) {
     await deleteArticleImage(imageUrl);
     throw error;
   }
+
+  return submit ? submitArticle(article) : article;
 }
 
 // Saves changes to an existing article (fields left out of input keep their current value).
 // With submit: true it also sends the article to the editor. It never publishes.
 async function saveArticle(article, input = {}, file, { submit = false } = {}) {
-  const allowed = submit ? SUBMITTABLE_STATUSES : EDITABLE_STATUSES;
-  if (!allowed.includes(article.status)) {
+  if (!EDITABLE_STATUSES.includes(article.status)) {
     throw new HttpError(409, 'Article is waiting for editor approval and cannot be changed');
+  }
+  if (submit && !canTransition(REPORTER_TRANSITIONS, article.status, STATUS.PENDING)) {
+    throw new HttpError(409, `A reporter cannot move an article from "${article.status}" to "pending"`);
   }
 
   const merged = Object.fromEntries(CONTENT_FIELDS.map(field => [field, input[field] ?? article[field]]));
