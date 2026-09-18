@@ -35,7 +35,8 @@
 <%- include('partials/header', { active: 'reporter' }) %>
 
 <main class="container container--form page">
-  <form action="<%= formAction %>" method="post" enctype="multipart/form-data" class="card form-card">
+  <form action="<%= formAction %>" method="post" enctype="multipart/form-data" class="card form-card"
+        data-autosave="<%= isView ? 'off' : 'on' %>" data-article-id="<%= article.id || '' %>">
     <div class="form-card__head">
       <div class="form-card__heading">
         <h1><%= pageTitle %></h1>
@@ -123,6 +124,7 @@
       <a href="/reporter" class="btn btn-outline">חזרה לרשימה</a>
       <% if (!isView) { %>
         <div class="form-card__submit">
+          <span class="hint" data-autosave-status hidden></span>
           <button type="submit" name="action" value="save" class="btn btn-outline">שמירת טיוטה</button>
           <button type="submit" name="action" value="submit" class="btn btn-primary">שליחה לאישור עורך</button>
         </div>
@@ -131,4 +133,5 @@
   </form>
 </main>
 
+<script src="/js/autosave.js" defer></script>
 <%- include('partials/footer') %>
