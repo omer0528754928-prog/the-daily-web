@@ -12,6 +12,16 @@
     .filter(Boolean);
   const imageField = form.elements.image;
 
+  // What to tell the reporter when the server refuses a field
+  const PROBLEMS = {
+    title: 'חובה למלא כותרת',
+    category: 'יש לבחור קטגוריה מהרשימה',
+    summary: 'התקציר ארוך מדי',
+    body: 'גוף הכתבה ארוך מדי',
+    image: 'הקובץ אינו תמונה תקינה (JPEG, PNG, GIF או WebP, עד 5MB)',
+    republishAt: 'תאריך הפרסום מחדש חייב להיות תקין ובעתיד',
+  };
+
   const IDLE_MS = 1500;       // save this long after the last keystroke
   const MIN_TITLE = 3;        // a new article is created only once it has a real title
 
@@ -59,6 +69,15 @@
     return { headers: {}, body: data };
   }
 
+  // Keeps the thumbnail in the form in step with what the server stored
+  function showCurrentImage(url) {
+    const box = form.querySelector('[data-image-current]');
+    const img = form.querySelector('[data-image-preview]');
+    if (!box || !img || !url) return;
+    img.src = `${url}?v=${Date.now()}`;
+    box.hidden = false;
+  }
+
   function show(text, isError) {
     if (!status) return;
     status.textContent = text;
@@ -96,14 +115,19 @@
       if (res.status === 409) return stop('הכתבה נשלחה לעורך — השינויים האחרונים לא נשמרו');
       if (!res.ok) {
         const problem = await res.json().catch(() => ({}));
-        const details = problem.details ? Object.values(problem.details).join(', ') : '';
-        show(`השמירה האוטומטית נכשלה${details ? ': ' + details : ' — נסו שוב בעוד רגע'}`, true);
+        const reasons = Object.keys(problem.details || {}).map(field => PROBLEMS[field] || field);
+        show(reasons.length ? `לא נשמר: ${reasons.join(', ')}` : 'השמירה האוטומטית נכשלה — נסו שוב בעוד רגע', true);
         return;
       }
 
       const { data } = await res.json();
       lastSaved = current;
-      if (withImage) savedImageKey = imageKey();
+      if (withImage) {
+        showCurrentImage(data.image);
+        imageField.value = '';       // already uploaded; the thumbnail is the proof
+        savedImageKey = '';
+        lastSaved = snapshot();      // the emptied picker is the new starting point
+      }
 
       // The draft now exists: keep editing it instead of creating another one
       if (!articleId) {

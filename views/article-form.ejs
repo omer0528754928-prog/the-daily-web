@@ -99,6 +99,10 @@
             </select>
           </label>
           <label class="field">תמונה ראשית
+            <span class="image-current" data-image-current <%= article.image ? '' : 'hidden' %>>
+              <img src="<%= article.image || '' %>" alt="התמונה הראשית של הכתבה" data-image-preview>
+              <span class="hint">תמונה נוכחית — בחירת קובץ תחליף אותה</span>
+            </span>
             <input type="file" name="image" accept="image/*">
           </label>
         </div>
