@@ -20,22 +20,29 @@ function latestNote(article) {
   return EMPTY;
 }
 
+// Publish date and views come from the version the public sees
+function formatPublished(article) {
+  return article.liveVersion ? formatDateTime(article.liveVersion.publishedAt) : EMPTY;
+}
+
+function formatViews(article) {
+  return article.liveVersion ? (article.views || 0).toLocaleString('en-US') : EMPTY;
+}
+
 // Turns an article from the database into one row of the table in views/reporter.ejs
 function toReporterRow(article, authorName) {
-  const isPublished = article.status === STATUS.PUBLISHED;
-
   return {
     id: String(article._id),
     title: article.title,
     category: article.category,
     author: authorName,
     updated: formatRelative(article.updatedAt),
-    published: article.publishedAt ? formatDateTime(article.publishedAt) : EMPTY,
+    published: formatPublished(article),
     status: STATUS_LABELS[article.status],
     returned: formatReturned(article.returnedCount),
     notes: latestNote(article),
-    views: isPublished ? (article.views || 0).toLocaleString('en-US') : EMPTY,
+    views: formatViews(article),
   };
 }
 
-module.exports = { toReporterRow };
+module.exports = { toReporterRow, formatReturned, formatPublished, formatViews };

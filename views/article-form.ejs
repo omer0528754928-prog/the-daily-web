@@ -45,6 +45,14 @@
     </div>
 
     <div class="form-card__body">
+      <% if (locals.problems && problems.length) { %>
+        <div class="alert alert-error">
+          <% problems.forEach(problem => { %>
+            <div><%= problem %></div>
+          <% }) %>
+        </div>
+      <% } %>
+
       <% if (!isNew) { %>
         <div class="notes">
           <div class="notes__head">

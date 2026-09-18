@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const CATEGORIES = require('../config/categories');
 const { STATUS } = require('../config/articleStatus');
+// Registers the User model, which editorNotes.by and author refer to (needed by populate)
+require('./User');
 
 const editorNoteSchema = new mongoose.Schema(
   {
@@ -11,21 +13,41 @@ const editorNoteSchema = new mongoose.Schema(
   { _id: true },
 );
 
+// The version the public sees. Only editor approval replaces it.
+const liveVersionSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    summary: { type: String, default: '' },
+    body: { type: String, default: '' },
+    category: { type: String, enum: CATEGORIES, required: true },
+    image: { type: String, default: null },
+    version: { type: Number, required: true, min: 1 },
+    publishedAt: { type: Date, required: true },
+  },
+  { _id: false },
+);
+
 const articleSchema = new mongoose.Schema(
   {
+    // Working copy: the text the reporter edits
     title: { type: String, required: true, trim: true },
     summary: { type: String, default: '', trim: true },
     body: { type: String, default: '' },
     category: { type: String, enum: CATEGORIES, required: true },
+    image: { type: String, default: null },
     tags: { type: [String], default: [] },
+    version: { type: Number, default: 1, min: 1 },
 
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     status: { type: String, enum: Object.values(STATUS), default: STATUS.DRAFT },
+    submittedAt: { type: Date },
+    republishAt: { type: Date },
     editorNotes: { type: [editorNoteSchema], default: [] },
     returnedCount: { type: Number, default: 0, min: 0 },
     views: { type: Number, default: 0, min: 0 },
-    publishedAt: { type: Date },
-    republishAt: { type: Date },
+
+    // null until the editor approves the article for the first time
+    liveVersion: { type: liveVersionSchema, default: null },
 
     // Links between stories, kept from the original dataset
     parent: { type: mongoose.Schema.Types.ObjectId, ref: 'Article' },

@@ -14,4 +14,11 @@ const STATUS_LABELS = Object.freeze({
   [STATUS.PUBLISHED]: 'פורסמה',
 });
 
-module.exports = { STATUS, STATUS_LABELS };
+// A reporter may change the text only in these statuses (not while the editor is reviewing)
+const EDITABLE_STATUSES = Object.freeze([STATUS.DRAFT, STATUS.RETURNED, STATUS.PUBLISHED]);
+
+// A reporter may send the article to the editor from these statuses.
+// Only the editor moves an article to "published".
+const SUBMITTABLE_STATUSES = Object.freeze([STATUS.DRAFT, STATUS.RETURNED, STATUS.PUBLISHED]);
+
+module.exports = { STATUS, STATUS_LABELS, EDITABLE_STATUSES, SUBMITTABLE_STATUSES };

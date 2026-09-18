@@ -30,14 +30,39 @@ const EDITOR_NOTES = [
   'יש לציין מקור לנתונים שמופיעים בפסקה השנייה',
 ];
 
-// Deterministic mix of statuses: 50% published, 20% pending, 10% returned, 20% draft
-function statusFor(index) {
-  const slot = index % 10;
-  if (slot < 5) return STATUS.PUBLISHED;
-  if (slot < 7) return STATUS.PENDING;
-  if (slot < 8) return STATUS.RETURNED;
-  return STATUS.DRAFT;
+// Every situation an article can be in, so each reporter flow can be tried right away
+const SITUATION = Object.freeze({
+  PUBLISHED: 'published',                   // public, nothing changed since approval
+  PUBLISHED_WITH_UNSENT_EDIT: 'publishedEdit', // public sees the old version; reporter saved changes
+  PENDING_UPDATE: 'pendingUpdate',          // public sees the old version; changes wait for the editor
+  PENDING_NEW: 'pendingNew',                // never published, waiting for the editor
+  RETURNED_NEW: 'returnedNew',              // never published, sent back with notes
+  RETURNED_UPDATE: 'returnedUpdate',        // public sees the old version; changes sent back with notes
+  DRAFT: 'draft',                           // never sent
+});
+
+// Out of every 10 articles: 3 published, 1 of each other situation, 2 drafts
+function situationFor(index) {
+  return [
+    SITUATION.PUBLISHED, SITUATION.PUBLISHED, SITUATION.PUBLISHED,
+    SITUATION.PUBLISHED_WITH_UNSENT_EDIT, SITUATION.PENDING_UPDATE, SITUATION.PENDING_NEW,
+    SITUATION.RETURNED_NEW, SITUATION.RETURNED_UPDATE, SITUATION.DRAFT, SITUATION.DRAFT,
+  ][index % 10];
 }
+
+const STATUS_BY_SITUATION = {
+  [SITUATION.PUBLISHED]: STATUS.PUBLISHED,
+  [SITUATION.PUBLISHED_WITH_UNSENT_EDIT]: STATUS.PUBLISHED,
+  [SITUATION.PENDING_UPDATE]: STATUS.PENDING,
+  [SITUATION.PENDING_NEW]: STATUS.PENDING,
+  [SITUATION.RETURNED_NEW]: STATUS.RETURNED,
+  [SITUATION.RETURNED_UPDATE]: STATUS.RETURNED,
+  [SITUATION.DRAFT]: STATUS.DRAFT,
+};
+
+const WAS_PUBLISHED = new Set([
+  SITUATION.PUBLISHED, SITUATION.PUBLISHED_WITH_UNSENT_EDIT, SITUATION.PENDING_UPDATE, SITUATION.RETURNED_UPDATE,
+]);
 
 // Spreads "last updated" over the past 30 days, with a few very recent ones
 function updatedAtFor(index, now) {
@@ -47,13 +72,35 @@ function updatedAtFor(index, now) {
 }
 
 function buildArticle(raw, index, authors, editor, now) {
-  const status = statusFor(index);
+  const situation = situationFor(index);
+  const status = STATUS_BY_SITUATION[situation];
   const updatedAt = updatedAtFor(index, now);
+  const wasPublished = WAS_PUBLISHED.has(situation);
+  const hasNewerVersion = wasPublished && situation !== SITUATION.PUBLISHED;
 
-  // Returned articles, and some published ones that were fixed before approval, have editor notes
+  const original = {
+    title: raw.title,
+    summary: raw.summary || '',
+    body: raw.body || '',
+    category: raw.category,
+    image: null,
+  };
+
+  // The public copy, approved by the editor (versions 1-3)
+  const liveVersion = wasPublished
+    ? { ...original, version: 1 + (index % 3), publishedAt: new Date(updatedAt - ((index % 48) + 24) * HOUR) }
+    : null;
+
+  // The working copy differs from the public one when the reporter changed it after approval
+  const workingCopy = hasNewerVersion
+    ? { ...original, title: `${original.title} (עדכון)`, body: `${original.body}\n\nעדכון: נוספו פרטים חדשים מהשעות האחרונות.` }
+    : original;
+  const version = liveVersion ? liveVersion.version + (hasNewerVersion ? 1 : 0) : 1;
+
+  // Returned articles have notes; some published ones were returned once before approval
   let returnedCount = 0;
   if (status === STATUS.RETURNED) returnedCount = 1 + (index % 2);
-  else if (status === STATUS.PUBLISHED && index % 20 === 3) returnedCount = 1;
+  else if (situation === SITUATION.PUBLISHED && index % 20 === 1) returnedCount = 1;
 
   const editorNotes = Array.from({ length: returnedCount }, (_, n) => ({
     text: EDITOR_NOTES[(index + n) % EDITOR_NOTES.length],
@@ -61,23 +108,21 @@ function buildArticle(raw, index, authors, editor, now) {
     createdAt: new Date(updatedAt - (n + 1) * HOUR),
   }));
 
-  const isPublished = status === STATUS.PUBLISHED;
-
   return {
     legacyId: raw.id,
-    title: raw.title,
-    summary: raw.summary || '',
-    body: raw.body || '',
-    category: raw.category,
+    ...workingCopy,
+    version,
     tags: raw.tags || [],
     relation: raw.relation || null,
-    // Blocks of 10 per author, so every author gets the full mix of statuses
+    // Blocks of 10 per author, so every author gets the full mix of situations
     author: authors[Math.floor(index / 10) % authors.length]._id,
     status,
+    submittedAt: status === STATUS.PENDING || status === STATUS.RETURNED ? new Date(updatedAt - 2 * HOUR) : null,
+    republishAt: null,
     editorNotes,
     returnedCount,
-    views: isPublished ? ((index * 2654435761) % 12000) + 150 : 0,
-    publishedAt: isPublished ? new Date(updatedAt - ((index % 48) + 1) * HOUR) : null,
+    views: liveVersion ? ((index * 2654435761) % 12000) + 150 : 0,
+    liveVersion,
     createdAt: new Date(updatedAt - 3 * 24 * HOUR),
     updatedAt,
   };
@@ -106,6 +151,10 @@ async function seedArticles(users) {
       },
     })),
   );
+
+  // Remove the old top-level publishedAt field (now liveVersion.publishedAt).
+  // Mongoose ignores fields that are not in the schema, so this goes to the collection directly.
+  await Article.collection.updateMany({ publishedAt: { $exists: true } }, { $unset: { publishedAt: '' } });
 
   // Second pass: link each article to its parent story, now that every article has an _id
   const idByLegacyId = new Map(
