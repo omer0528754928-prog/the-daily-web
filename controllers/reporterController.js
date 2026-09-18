@@ -1,20 +1,29 @@
 const articleService = require('../services/articleService');
 const { toReporterRow } = require('../presenters/reporterArticlePresenter');
 const { newArticle, toArticleForm, toProblemMessages } = require('../presenters/articleFormPresenter');
+const { toFilterPanels, toPager } = require('../presenters/reporterFiltersPresenter');
 
 // The form sends action=save ("שמירת טיוטה") or action=submit ("שליחה לאישור עורך")
 function isSubmit(req) {
   return req.body?.action === 'submit';
 }
 
-// GET /reporter: the reporter's own articles and their status
+// GET /reporter: the reporter's own articles, filtered by the column filters, one page at a time
 async function showDashboard(req, res) {
   const { id, name } = req.session.user;
-  const { items } = await articleService.listByAuthor(id);
+  const { page, limit, skip } = req.pagination;
+
+  const [{ items, total }, totalAll] = await Promise.all([
+    articleService.listByAuthor(id, { filters: req.filters, limit, skip }),
+    articleService.countByAuthor(id),
+  ]);
 
   res.render('reporter', {
     reporterName: name,
     myArticles: items.map(article => toReporterRow(article, name)),
+    filters: toFilterPanels(req.filters),
+    pager: toPager(req.filters, { page, pageSize: limit, total }),
+    totalAll,
   });
 }
 

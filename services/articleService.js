@@ -13,8 +13,29 @@ const { saveArticleImage, deleteArticleImage } = require('./imageStorage');
 const LIST_FIELDS = 'title category status version editorNotes returnedCount views liveVersion.version liveVersion.publishedAt updatedAt';
 const CONTENT_FIELDS = ['title', 'summary', 'body', 'category'];
 
-async function listByAuthor(authorId, { limit = 0, skip = 0 } = {}) {
+// Turns the column filters from the reporter table into a MongoDB query
+function buildFilter(authorId, filters = {}) {
   const filter = { author: authorId };
+
+  if (filters.category?.length) filter.category = { $in: filters.category };
+  if (filters.status?.length) filter.status = { $in: filters.status };
+  if (filters.returned === 'yes') filter.returnedCount = { $gt: 0 };
+  if (filters.returned === 'no') filter.returnedCount = 0;
+
+  // The publish date lives on the approved version, so this also excludes
+  // articles that were never published
+  if (filters.publishedFrom || filters.publishedTo) {
+    filter['liveVersion.publishedAt'] = {
+      ...(filters.publishedFrom ? { $gte: filters.publishedFrom } : {}),
+      ...(filters.publishedTo ? { $lte: filters.publishedTo } : {}),
+    };
+  }
+
+  return filter;
+}
+
+async function listByAuthor(authorId, { filters, limit = 0, skip = 0 } = {}) {
+  const filter = buildFilter(authorId, filters);
 
   const [items, total] = await Promise.all([
     Article.find(filter)
@@ -27,6 +48,11 @@ async function listByAuthor(authorId, { limit = 0, skip = 0 } = {}) {
   ]);
 
   return { items, total };
+}
+
+// How many articles the reporter has in total, ignoring the column filters
+function countByAuthor(authorId) {
+  return Article.countDocuments({ author: authorId });
 }
 
 // Returns the article only if it belongs to this author, otherwise null
@@ -145,4 +171,4 @@ function submitArticle(article) {
   return saveArticle(article, {}, undefined, { submit: true });
 }
 
-module.exports = { listByAuthor, findOwnArticle, createArticle, saveArticle, submitArticle };
+module.exports = { listByAuthor, countByAuthor, findOwnArticle, createArticle, saveArticle, submitArticle };

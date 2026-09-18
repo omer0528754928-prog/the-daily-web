@@ -59,6 +59,8 @@ const articleSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Covers the reporter table: own articles, newest first, with or without a status filter
+articleSchema.index({ author: 1, status: 1, updatedAt: -1 });
 articleSchema.index({ author: 1, updatedAt: -1 });
 
 module.exports = mongoose.model('Article', articleSchema);

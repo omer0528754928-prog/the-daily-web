@@ -22,4 +22,16 @@ function pagination(req, res, next) {
   next();
 }
 
+// Page-based paging for the HTML table: ?page=2 with a fixed page size
+function paginationByPage(pageSize = 10) {
+  return (req, res, next) => {
+    const page = parseNonNegativeInt(req.query.page, 'page') ?? 1;
+    if (page < 1) throw new HttpError(400, '"page" must be 1 or more');
+
+    req.pagination = { page, limit: pageSize, skip: (page - 1) * pageSize };
+    next();
+  };
+}
+
 module.exports = pagination;
+module.exports.paginationByPage = paginationByPage;

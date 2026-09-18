@@ -4,7 +4,7 @@ const { toArticleSummary, toArticleDetail } = require('../../presenters/articleA
 // GET /api/reporter/articles?limit=&skip=
 async function listMyArticles(req, res) {
   const { limit, skip } = req.pagination;
-  const { items, total } = await articleService.listByAuthor(req.session.user.id, { limit, skip });
+  const { items, total } = await articleService.listByAuthor(req.session.user.id, { filters: req.filters, limit, skip });
 
   res.json({
     data: items.map(toArticleSummary),

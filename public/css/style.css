@@ -954,3 +954,125 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
   .search { width: 100%; }
   .topbar__sep, .topbar__date { display: none; }
 }
+
+
+/* 14. Table column filters & pager
+   ========================================================================== */
+
+/* The header name opens a small panel under it (a <details> element, no JS) */
+.table th { position: relative; }
+.filter summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+.filter summary::-webkit-details-marker { display: none; }
+.filter summary::after {
+  content: "▾";
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.filter summary:hover { background: var(--primary-soft); color: var(--primary); }
+.filter[data-active] summary { color: var(--primary); }
+.filter[data-active] summary::after { content: "▾ ●"; color: var(--primary); }
+
+.filter-menu {
+  position: absolute;
+  z-index: 30;
+  inset-inline-start: 8px;
+  top: calc(100% + 2px);
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px #0d1b2f26;
+  font-weight: 400;
+  text-align: start;
+}
+.filter-menu__options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 230px;
+  overflow-y: auto;
+}
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.filter-option input { accent-color: var(--primary); }
+.filter-date {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.filter-date input {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 7px 9px;
+  font-size: 13px;
+  background: var(--surface);
+  outline: none;
+}
+.filter-date input:focus { border-color: var(--primary); }
+.filter-menu__actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.clear-filters { font-size: 13px; margin-inline-start: 6px; }
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-top: 14px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.pager__step { gap: 6px; }
+.pager__step.is-disabled { opacity: 0.45; cursor: default; }
+
+/* The numbers sit in the middle, between the two buttons */
+.pager__pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-inline: auto;
+}
+.pager__page {
+  min-width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-soft);
+}
+.pager__page:hover { background: var(--bg); color: var(--primary); text-decoration: none; }
+.pager__page.is-current { background: #eef1f6; color: var(--text); font-weight: 600; }
+.pager__gap { padding: 0 4px; color: var(--text-muted); }
+
+.pager__info { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 8px; }

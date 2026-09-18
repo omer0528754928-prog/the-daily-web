@@ -8,6 +8,10 @@
     { id: 14, title: 'עומסי הבוקר: המסלולים שהשתנו החודש', category: 'חדשות', author: 'דנה לוי', updated: 'שלישי, 08:10', published: '10.09.2026, 07:45', status: 'פורסמה', returned: 'לא', notes: '—', views: '3,204' },
     { id: 15, title: 'מה קורה בפארק העירוני אחרי השיפוץ', category: 'תרבות ובידור', author: 'דנה לוי', updated: 'ראשון, 15:00', published: '07.09.2026, 16:30', status: 'פורסמה', returned: 'כן · פעם אחת', notes: 'תוקן לאחר הערת עורך על הכתוביות לתמונות', views: '2,118' },
   ];
+  // Filters and paging come from the route; without them the table simply shows every row
+  const filters = locals.filters;
+  const pager = locals.pager;
+  const totalAll = locals.totalAll ?? myArticles.length;
 %>
 <%- include('partials/head', { title: 'אזור הכתב' }) %>
 <%- include('partials/header', { active: 'reporter' }) %>
@@ -16,7 +20,14 @@
   <div class="page-head">
     <div class="page-head__text">
       <h1>אזור הכתב</h1>
-      <p>שלום <%= reporterName %> · <%= myArticles.length %> כתבות</p>
+      <p>שלום <%= reporterName %> ·
+        <% if (filters && filters.anyActive) { %>
+          <%= pager.total %> מתוך <%= totalAll %> כתבות
+          <a href="/reporter" class="clear-filters">נקה סינון</a>
+        <% } else { %>
+          <%= totalAll %> כתבות
+        <% } %>
+      </p>
     </div>
     <a href="/reporter/articles/new" class="btn btn-primary">+ כתבה חדשה</a>
   </div>
@@ -28,12 +39,106 @@
         <thead>
           <tr>
             <th>כותרת</th>
-            <th>קטגוריה</th>
+            <th>
+              <% if (filters) { %>
+                <details class="filter"<%= filters['category'].active ? ' data-active' : '' %>>
+                  <summary>קטגוריה</summary>
+                  <form action="/reporter" method="get" class="filter-menu">
+                    <% filters['category'].hidden.forEach(field => { %>
+                      <input type="hidden" name="<%= field.name %>" value="<%= field.value %>">
+                    <% }) %>
+                    <div class="filter-menu__options">
+                      <% filters['category'].options.forEach(option => { %>
+                        <label class="filter-option">
+                          <input type="checkbox" name="category" value="<%= option.value %>" <%= option.checked ? 'checked' : '' %>>
+                          <span><%= option.label %></span>
+                        </label>
+                      <% }) %>
+                    </div>
+                    <div class="filter-menu__actions">
+                      <button type="submit" class="btn btn-primary btn-xs">סינון</button>
+                      <a href="/reporter" class="btn btn-outline btn-xs">נקה</a>
+                    </div>
+                  </form>
+                </details>
+              <% } else { %>קטגוריה<% } %>
+            </th>
             <th>כתב/ת</th>
             <th>עודכן</th>
-            <th>פורסם</th>
-            <th>סטטוס</th>
-            <th>הוחזרה לתיקונים</th>
+            <th>
+              <% if (filters) { %>
+                <details class="filter"<%= filters['published'].active ? ' data-active' : '' %>>
+                  <summary>פורסם</summary>
+                  <form action="/reporter" method="get" class="filter-menu">
+                    <% filters['published'].hidden.forEach(field => { %>
+                      <input type="hidden" name="<%= field.name %>" value="<%= field.value %>">
+                    <% }) %>
+                    <label class="filter-date">מתאריך
+                      <input type="date" name="publishedFrom" value="<%= filters['published'].from %>">
+                    </label>
+                    <label class="filter-date">עד תאריך
+                      <input type="date" name="publishedTo" value="<%= filters['published'].to %>">
+                    </label>
+                    <div class="filter-menu__actions">
+                      <button type="submit" class="btn btn-primary btn-xs">סינון</button>
+                      <a href="/reporter" class="btn btn-outline btn-xs">נקה</a>
+                    </div>
+                  </form>
+                </details>
+              <% } else { %>פורסם<% } %>
+            </th>
+            <th>
+              <% if (filters) { %>
+                <details class="filter"<%= filters['status'].active ? ' data-active' : '' %>>
+                  <summary>סטטוס</summary>
+                  <form action="/reporter" method="get" class="filter-menu">
+                    <% filters['status'].hidden.forEach(field => { %>
+                      <input type="hidden" name="<%= field.name %>" value="<%= field.value %>">
+                    <% }) %>
+                    <div class="filter-menu__options">
+                      <% filters['status'].options.forEach(option => { %>
+                        <label class="filter-option">
+                          <input type="checkbox" name="status" value="<%= option.value %>" <%= option.checked ? 'checked' : '' %>>
+                          <span><%= option.label %></span>
+                        </label>
+                      <% }) %>
+                    </div>
+                    <div class="filter-menu__actions">
+                      <button type="submit" class="btn btn-primary btn-xs">סינון</button>
+                      <a href="/reporter" class="btn btn-outline btn-xs">נקה</a>
+                    </div>
+                  </form>
+                </details>
+              <% } else { %>סטטוס<% } %>
+            </th>
+            <th>
+              <% if (filters) { %>
+                <details class="filter"<%= filters['returned'].active ? ' data-active' : '' %>>
+                  <summary>הוחזרה לתיקונים</summary>
+                  <form action="/reporter" method="get" class="filter-menu">
+                    <% filters['returned'].hidden.forEach(field => { %>
+                      <input type="hidden" name="<%= field.name %>" value="<%= field.value %>">
+                    <% }) %>
+                    <div class="filter-menu__options">
+                      <label class="filter-option">
+                        <input type="radio" name="returned" value="" <%= filters['returned'].active ? '' : 'checked' %>>
+                        <span>הכל</span>
+                      </label>
+                      <% filters['returned'].options.forEach(option => { %>
+                        <label class="filter-option">
+                          <input type="radio" name="returned" value="<%= option.value %>" <%= option.checked ? 'checked' : '' %>>
+                          <span><%= option.label %></span>
+                        </label>
+                      <% }) %>
+                    </div>
+                    <div class="filter-menu__actions">
+                      <button type="submit" class="btn btn-primary btn-xs">סינון</button>
+                      <a href="/reporter" class="btn btn-outline btn-xs">נקה</a>
+                    </div>
+                  </form>
+                </details>
+              <% } else { %>הוחזרה לתיקונים<% } %>
+            </th>
             <th>הערות עורך</th>
             <th>צפיות</th>
             <th></th>
@@ -62,6 +167,39 @@
         </tbody>
       </table>
     </div>
+
+    <% if (!myArticles.length) { %>
+      <p class="empty">לא נמצאו כתבות שמתאימות לסינון.</p>
+    <% } %>
+
+    <% if (pager && pager.pages > 1) { %>
+      <nav class="pager" aria-label="ניווט בין עמודים">
+        <% if (pager.prevUrl) { %>
+          <a href="<%= pager.prevUrl %>" class="btn btn-outline btn-sm pager__step">הקודם <span aria-hidden="true">→</span></a>
+        <% } else { %>
+          <span class="btn btn-outline btn-sm pager__step is-disabled">הקודם <span aria-hidden="true">→</span></span>
+        <% } %>
+
+        <div class="pager__pages">
+          <% pager.items.forEach(item => { %>
+            <% if (item.type === 'gap') { %>
+              <span class="pager__gap">…</span>
+            <% } else if (item.current) { %>
+              <span class="pager__page is-current" aria-current="page"><%= item.number %></span>
+            <% } else { %>
+              <a href="<%= item.url %>" class="pager__page"><%= item.number %></a>
+            <% } %>
+          <% }) %>
+        </div>
+
+        <% if (pager.nextUrl) { %>
+          <a href="<%= pager.nextUrl %>" class="btn btn-outline btn-sm pager__step"><span aria-hidden="true">←</span> הבא</a>
+        <% } else { %>
+          <span class="btn btn-outline btn-sm pager__step is-disabled"><span aria-hidden="true">←</span> הבא</span>
+        <% } %>
+      </nav>
+      <p class="pager__info">מוצגות <%= pager.shown %> כתבות</p>
+    <% } %>
   </section>
 </main>
 
