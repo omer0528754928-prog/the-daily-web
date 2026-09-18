@@ -158,8 +158,18 @@
               <td><%= article.views %></td>
               <td>
                 <div class="actions">
-                  <a href="/reporter/articles/<%= article.id %>/edit" class="btn btn-outline btn-xs">עריכה</a>
-                  <a href="/reporter/articles/<%= article.id %>" class="btn btn-muted btn-xs">צפייה</a>
+                  <a href="/reporter/articles/<%= article.id %>/edit" class="btn btn-outline btn-xs btn-icon" title="עריכה" aria-label="עריכה">
+                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M4 20h4l10-10a2.6 2.6 0 0 0-3.7-3.7L4.3 16.3 4 20Z"></path>
+                      <path d="M13.5 6.8 17.2 10.5"></path>
+                    </svg>
+                  </a>
+                  <a href="/reporter/articles/<%= article.id %>" class="btn btn-muted btn-xs btn-icon" title="צפייה" aria-label="צפייה">
+                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M1.8 12S5.5 5.5 12 5.5 22.2 12 22.2 12 18.5 18.5 12 18.5 1.8 12 1.8 12Z"></path>
+                      <circle cx="12" cy="12" r="3.2"></circle>
+                    </svg>
+                  </a>
                 </div>
               </td>
             </tr>

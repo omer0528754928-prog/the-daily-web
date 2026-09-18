@@ -297,6 +297,10 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
 .btn-lg { padding: 14px; font-size: 15px; }
 .btn-push { margin-inline-start: auto; }
 
+/* Square button holding only an icon (the label lives in title/aria-label) */
+.btn-icon { width: 32px; height: 32px; padding: 0; }
+.btn-icon svg { display: block; }
+
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:hover { background: var(--primary-dark); color: #fff; }
 .btn-dark { background: var(--navy); color: #fff; }
