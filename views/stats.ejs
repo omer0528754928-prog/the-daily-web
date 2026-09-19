@@ -1,0 +1,91 @@
+<%
+  // Sample data from the design. When the route passes real data, it is used instead.
+  const statArticles = locals.statArticles || [
+    { key: 'transport', label: 'כתבת התחבורה', views: [120, 180, 260, 420, 610, 880, 1450, 1320, 1180, 1520, 2100, 2460, 2280, 2050, 1880, 1640], updates: [6, 10] },
+    { key: 'rate', label: 'כתבת הריבית', views: [90, 140, 220, 300, 520, 640, 700, 980, 1240, 1160, 1020, 1380, 1560, 1440, 1300, 1150], updates: [7, 12] },
+    { key: 'housing', label: 'כתבת הדיור', views: [60, 90, 150, 240, 300, 380, 520, 700, 660, 620, 840, 960, 900, 820, 760, 700], updates: [6, 10] },
+  ];
+  const query = locals.query || {};
+  const selected = statArticles.find(item => item.key === query.article) || statArticles[0];
+  const views = selected.views;
+
+  const totalViews = views.reduce((sum, value) => sum + value, 0);
+  const peakViews = Math.max(...views);
+  const kpis = locals.kpis || [
+    { label: 'צפיות ב־24 שעות', value: totalViews.toLocaleString('en-US'), delta: '+18% מול הממוצע' },
+    { label: 'שיא צפיות בשעה', value: peakViews.toLocaleString('en-US'), delta: 'אחרי פרסום עדכון 2' },
+    { label: 'זמן קריאה ממוצע', value: '2:14', delta: '+0:19' },
+    { label: 'תגובות', value: '87', delta: '+12 היום' },
+  ];
+
+  // Chart drawing area inside the 760×300 SVG
+  const left = 46, right = 748, top = 24, bottom = 256;
+  const maxValue = peakViews * 1.1;
+  const xFor = (index) => left + (index * (right - left)) / (views.length - 1);
+  const yFor = (value) => bottom - (value / maxValue) * (bottom - top);
+  const linePoints = views.map((value, index) => `${xFor(index).toFixed(1)},${yFor(value).toFixed(1)}`).join(' ');
+  const gridLines = [0, 1, 2, 3, 4].map(step => {
+    const value = (maxValue / 4) * (4 - step);
+    return { y: yFor(value).toFixed(1), label: Math.round(value).toLocaleString('en-US') };
+  });
+%>
+<%- include('partials/head', { title: 'סטטיסטיקות' }) %>
+<%- include('partials/header', { active: 'stats' }) %>
+
+<main class="container container--narrow page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <h1>Impact Analytics</h1>
+      <p>צפיות לאורך זמן, עם סימון נקודות פרסום עדכון</p>
+    </div>
+    <nav class="tabs">
+      <% statArticles.forEach(item => { %>
+        <a href="/stats?article=<%= item.key %>" class="pill <%= item.key === selected.key ? 'is-active' : '' %>"><%= item.label %></a>
+      <% }) %>
+    </nav>
+  </div>
+
+  <div class="kpis">
+    <% kpis.forEach(kpi => { %>
+      <div class="card kpi">
+        <span class="kpi__label"><%= kpi.label %></span>
+        <span class="kpi__value"><%= kpi.value %></span>
+        <span class="kpi__delta"><%= kpi.delta %></span>
+      </div>
+    <% }) %>
+  </div>
+
+  <section class="card panel">
+    <div class="chart-head">
+      <h2 class="panel__title">צפיות לפי שעה · <%= selected.label %></h2>
+      <span class="legend"><span class="legend__line"></span>צפיות</span>
+      <span class="legend"><span class="legend__marker"></span>פרסום עדכון</span>
+    </div>
+
+    <div class="chart-wrap">
+      <svg viewBox="0 0 760 300" class="chart" role="img" aria-label="צפיות לפי שעה">
+        <rect x="0" y="0" width="760" height="300" class="chart__bg"></rect>
+        <% gridLines.forEach(line => { %>
+          <line x1="<%= left %>" y1="<%= line.y %>" x2="<%= right %>" y2="<%= line.y %>" class="chart__grid"></line>
+          <text x="40" y="<%= Number(line.y) + 4 %>" text-anchor="end" class="chart__text"><%= line.label %></text>
+        <% }) %>
+        <% selected.updates.forEach((index, number) => { %>
+          <line x1="<%= xFor(index).toFixed(1) %>" y1="20" x2="<%= xFor(index).toFixed(1) %>" y2="<%= bottom %>" class="chart__marker"></line>
+          <text x="<%= (xFor(index) + 6).toFixed(1) %>" y="16" class="chart__text chart__text--marker">עדכון <%= number + 1 %> פורסם</text>
+        <% }) %>
+        <polyline points="<%= left %>,<%= bottom %> <%= linePoints %> <%= right %>,<%= bottom %>" class="chart__area"></polyline>
+        <polyline points="<%= linePoints %>" class="chart__line"></polyline>
+        <% views.forEach((value, index) => { %>
+          <circle cx="<%= xFor(index).toFixed(1) %>" cy="<%= yFor(value).toFixed(1) %>" r="3.5" class="chart__dot"></circle>
+          <% if (index % 3 === 0) { %>
+            <text x="<%= xFor(index).toFixed(1) %>" y="278" text-anchor="<%= index === views.length - 1 ? 'end' : 'middle' %>" class="chart__text"><%= String(Math.floor(index * 1.5)).padStart(2, '0') %>:00</text>
+          <% } %>
+        <% }) %>
+      </svg>
+    </div>
+
+    <p class="chart-insight">שתי נקודות הפרסום המסומנות מראות עלייה חדה בצפיות בשעה שאחרי כל אישור עורך — אחרי העדכון השני הצפיות כמעט הוכפלו לעומת השעה שלפניו.</p>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

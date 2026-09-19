@@ -1,0 +1,76 @@
+<%
+  // Sample data from the design. When the route passes real data, it is used instead.
+  const queue = locals.queue || [
+    { id: 12, title: 'ראיון: מנהלת מרכז הצעירים על השנה הקרובה', reporter: 'דנה לוי', category: 'חדשות', updated: 'לפני שעה', status: 'ממתינה לאישור', live: '—', pending: 'גרסה 1' },
+    { id: 14, title: 'עומסי הבוקר: המסלולים שהשתנו החודש', reporter: 'דנה לוי', category: 'חדשות', updated: 'לפני 40 דקות', status: 'ממתינה לאישור', live: 'גרסה 3 · מפורסמת מ־10.09', pending: 'גרסה 4' },
+    { id: 21, title: 'עדכון: נתוני הריבית לאחר הודעת בנק ישראל', reporter: 'עומר שגב', category: 'כלכלה', updated: 'לפני 2 שעות', status: 'ממתינה לאישור', live: 'גרסה 2 · מפורסמת מ־12.09', pending: 'גרסה 3' },
+    { id: 22, title: 'סיכום מחזור 7 בליגה', reporter: 'רותם אבן', category: 'ספורט', updated: 'לפני 4 שעות', status: 'ממתינה לאישור', live: '—', pending: 'גרסה 1' },
+  ];
+  const compare = locals.compare || {
+    title: 'עומסי הבוקר: המסלולים שהשתנו החודש',
+    liveVersion: 3,
+    liveText: 'בעקבות עבודות התשתית שונו שני מסלולים בשכונה הצפונית. השינוי צפוי להישאר בתוקף עד סוף החודש.',
+    pendingVersion: 4,
+    pendingText: 'בעקבות עבודות התשתית שונו שלושה מסלולים בשכונה הצפונית, ונוספה תחנה זמנית ברחוב הראשי. השינוי יישאר בתוקף עד סוף הרבעון, בהתאם לעדכון שהתקבל הבוקר מאגף התחבורה.',
+  };
+
+  const query = locals.query || {};
+  const currentTab = query.status || 'ממתינה לאישור';
+  const tabs = ['ממתינה לאישור', 'בהכנה', 'הוחזרה לתיקונים', 'פורסמה', 'הכל'];
+%>
+<%- include('partials/head', { title: 'אזור העורך' }) %>
+<%- include('partials/header', { active: 'editor' }) %>
+
+<main class="container container--narrow page">
+  <div class="page-head">
+    <div class="page-head__text">
+      <h1>אזור העורך</h1>
+      <p><%= queue.length %> כתבות בתצוגה · מסונן לפי «<%= currentTab %>»</p>
+    </div>
+    <nav class="tabs">
+      <% tabs.forEach(tab => { %>
+        <a href="/editor?status=<%= encodeURIComponent(tab) %>" class="pill <%= currentTab === tab ? 'is-active' : '' %>"><%= tab %></a>
+      <% }) %>
+    </nav>
+  </div>
+
+  <div class="queue">
+    <% queue.forEach(article => { %>
+      <div class="card queue-item">
+        <div class="queue-item__info">
+          <strong class="queue-item__title"><%= article.title %></strong>
+          <span class="meta"><%= article.reporter %> · <%= article.category %> · הוגש <%= article.updated %></span>
+          <span class="meta">מוצג לציבור: <%= article.live %> · ממתין לאישור: <%= article.pending %></span>
+        </div>
+        <span class="status" data-status="<%= article.status %>"><%= article.status %></span>
+        <div class="actions">
+          <a href="/editor/articles/<%= article.id %>/review" class="btn btn-primary btn-sm">בדיקה ואישור</a>
+          <form action="/editor/articles/<%= article.id %>/delete" method="post">
+            <button type="submit" class="btn btn-danger btn-sm">מחיקה</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+    <% if (!queue.length) { %>
+      <p class="empty">אין כתבות בסטטוס הזה.</p>
+    <% } %>
+  </div>
+
+  <section class="card panel">
+    <h2 class="panel__title">השוואת גרסאות · «<%= compare.title %>»</h2>
+    <p class="hint">מה שהציבור רואה כרגע לעומת העדכון שממתין לאישור.</p>
+    <div class="compare">
+      <div class="compare__col compare__col--live">
+        <div class="compare__label">מפורסם כרגע · גרסה <%= compare.liveVersion %></div>
+        <p><%= compare.liveText %></p>
+      </div>
+      <div class="compare__col compare__col--pending">
+        <div class="compare__label">ממתין לאישור · גרסה <%= compare.pendingVersion %></div>
+        <p><%= compare.pendingText %></p>
+      </div>
+    </div>
+    <p class="hint">הגרסה שמפורסמת כרגע ממשיכה להיות מוצגת לציבור עד לאישור העדכון. אישור מחליף את הגרסה הציבורית; החזרה לתיקונים משאירה אותה ללא שינוי.</p>
+  </section>
+</main>
+
+<%- include('partials/footer') %>
