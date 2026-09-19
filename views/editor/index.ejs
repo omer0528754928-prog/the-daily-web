@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>אזור העורך · The Daily Web</title>
+  <link rel="stylesheet" href="/css/editor.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>The Daily Web</strong>
+      <span class="brand-sub">אזור העורך</span>
+    </div>
+    <div class="user-box">
+      <a class="btn btn-ghost" href="/editor/analytics">📊 אנליטיקות</a>
+      <span class="user-name">שלום, <%= user.name %></span>
+      <a class="btn btn-ghost" href="/editor/logout">התנתק</a>
+    </div>
+  </header>
+
+  <!-- filter tabs: All + one per status -->
+  <nav class="filters" id="filters" aria-label="סינון לפי מצב">
+    <button class="filter is-active" data-status="all">הכול <span class="count" data-count="all">0</span></button>
+    <% statuses.forEach(function (s) { %>
+      <button class="filter" data-status="<%= s %>">
+        <span class="label" data-status-label="<%= s %>"><%= s %></span>
+        <span class="count" data-count="<%= s %>">0</span>
+      </button>
+    <% }); %>
+  </nav>
+
+  <main class="layout">
+    <!-- left: list of articles -->
+    <section class="list-panel" aria-label="רשימת כתבות">
+      <div id="list" class="list"></div>
+      <p id="list-empty" class="empty hidden">אין כתבות במצב זה.</p>
+    </section>
+
+    <!-- right: detail / actions for the selected article -->
+    <aside class="detail-panel" id="detail" aria-live="polite">
+      <p class="detail-placeholder">בחר כתבה מהרשימה כדי לצפות בה ולבצע פעולות.</p>
+    </aside>
+  </main>
+
+  <!-- tiny toast for success / error messages -->
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="/js/editor.js"></script>
+</body>
+</html>

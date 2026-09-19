@@ -15,6 +15,9 @@
   "type": "commonjs",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
+    "seed": "node scripts/seed-articles.js --fresh",
+    "seed:dry": "node scripts/seed-articles.js --dry-run",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

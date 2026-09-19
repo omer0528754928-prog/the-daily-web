@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>כניסת עורך · The Daily Web</title>
+  <link rel="stylesheet" href="/css/editor.css" />
+</head>
+<body class="login-body">
+  <main class="login-card">
+    <h1>The Daily Web</h1>
+    <p class="subtitle">אזור העורך — כניסה</p>
+
+    <% if (dev) { %>
+      <a class="btn btn-primary btn-block" href="/editor/dev-login">היכנס כעורך (DEV)</a>
+      <p class="dev-note">
+        זוהי כניסת הדגמה זמנית לצורכי פיתוח בלבד. היא תוחלף במסך ההתחברות
+        האמיתי (עם שם משתמש וסיסמה) שנבנה על ידי חבר 1 בצוות.
+      </p>
+    <% } else { %>
+      <p class="dev-note">מסך ההתחברות האמיתי טרם חובר. פנה לחבר 1.</p>
+    <% } %>
+  </main>
+</body>
+</html>
