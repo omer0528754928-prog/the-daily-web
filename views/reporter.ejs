@@ -16,6 +16,16 @@
 <%- include('partials/head', { title: 'אזור הכתב' }) %>
 <%- include('partials/header', { active: 'reporter' }) %>
 
+<% if (locals.flash) { %>
+  <div class="popup" role="dialog" aria-modal="true" aria-labelledby="popup-text">
+    <div class="popup__box card">
+      <span class="popup__mark" aria-hidden="true">✓</span>
+      <p class="popup__text" id="popup-text"><%= flash %></p>
+      <a href="/reporter" class="btn btn-primary" autofocus>סגירה</a>
+    </div>
+  </div>
+<% } %>
+
 <main class="container page">
   <div class="page-head">
     <div class="page-head__text">

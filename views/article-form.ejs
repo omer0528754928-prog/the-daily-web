@@ -98,13 +98,19 @@
               <% }) %>
             </select>
           </label>
-          <label class="field">תמונה ראשית
+          <div class="field">
+            <span class="field__label">תמונה ראשית</span>
             <span class="image-current" data-image-current <%= article.image ? '' : 'hidden' %>>
               <img src="<%= article.image || '' %>" alt="התמונה הראשית של הכתבה" data-image-preview>
-              <span class="hint">תמונה נוכחית — בחירת קובץ תחליף אותה</span>
+              <span class="hint">תמונה נוכחית</span>
             </span>
-            <input type="file" name="image" accept="image/*">
-          </label>
+            <%# the file input itself is hidden, so the browser's "לא נבחר קובץ" never shows %>
+            <input type="file" id="article-image" name="image" accept="image/*" class="file-input">
+            <label for="article-image" class="btn btn-outline btn-sm file-button" data-image-button>
+              <%= article.image ? 'החלפת תמונה' : 'בחירת תמונה' %>
+            </label>
+            <span class="hint" data-image-name hidden></span>
+          </div>
         </div>
 
         <label class="field">תקציר

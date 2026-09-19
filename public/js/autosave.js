@@ -70,12 +70,22 @@
   }
 
   // Keeps the thumbnail in the form in step with what the server stored
+  // "בחירת תמונה" becomes "החלפת תמונה" once the article has one
+  function showImageName(text) {
+    const label = form.querySelector('[data-image-name]');
+    if (!label) return;
+    label.textContent = text;
+    label.hidden = !text;
+  }
+
   function showCurrentImage(url) {
     const box = form.querySelector('[data-image-current]');
     const img = form.querySelector('[data-image-preview]');
     if (!box || !img || !url) return;
     img.src = `${url}?v=${Date.now()}`;
     box.hidden = false;
+    const button = form.querySelector('[data-image-button]');
+    if (button) button.textContent = 'החלפת תמונה';
   }
 
   function show(text, isError) {
@@ -124,6 +134,7 @@
       lastSaved = current;
       if (withImage) {
         showCurrentImage(data.image);
+        showImageName('');
         imageField.value = '';       // already uploaded; the thumbnail is the proof
         savedImageKey = '';
         lastSaved = snapshot();      // the emptied picker is the new starting point
@@ -154,7 +165,12 @@
     field.addEventListener('input', scheduleSave);
     field.addEventListener('change', () => save());   // leaving a field or picking a category
   }
-  imageField?.addEventListener('change', () => save());   // a chosen image is uploaded right away
+  // A chosen image is uploaded right away; its name is shown until the upload finishes
+  imageField?.addEventListener('change', () => {
+    const file = chosenImage();
+    showImageName(file ? `נבחר: ${file.name} — מעלה…` : '');
+    save();
+  });
 
   // Closing the tab, switching tabs, or navigating away: send what is not saved yet
   document.addEventListener('visibilitychange', () => {
