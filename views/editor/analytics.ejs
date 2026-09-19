@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Impact Analytics · The Daily Web</title>
+  <link rel="stylesheet" href="/css/editor.css" />
+  <link rel="stylesheet" href="/css/analytics.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>The Daily Web</strong>
+      <span class="brand-sub">Impact Analytics</span>
+    </div>
+    <div class="user-box">
+      <a class="btn btn-ghost" href="/editor">→ חזרה לאזור העורך</a>
+      <span class="user-name">שלום, <%= user.name %></span>
+      <a class="btn btn-ghost" href="/editor/logout">התנתק</a>
+    </div>
+  </header>
+
+  <!-- filters -->
+  <section class="filters-bar" aria-label="סינון">
+    <div class="field">
+      <label for="filterCategory">קטגוריה</label>
+      <select id="filterCategory"><option value="">כל הקטגוריות</option></select>
+    </div>
+    <div class="field">
+      <label for="filterFrom">מתאריך</label>
+      <input type="date" id="filterFrom" />
+    </div>
+    <div class="field">
+      <label for="filterTo">עד תאריך</label>
+      <input type="date" id="filterTo" />
+    </div>
+    <div class="field field-actions">
+      <button class="btn btn-primary" id="applyBtn">החל סינון</button>
+      <button class="btn btn-ghost" id="resetBtn">איפוס</button>
+    </div>
+  </section>
+
+  <main class="dash">
+    <!-- stat tiles -->
+    <div class="tiles">
+      <div class="tile"><div class="tile-num" id="statArticles">—</div><div class="tile-label">כמות כתבות</div></div>
+      <div class="tile"><div class="tile-num" id="statViews">—</div><div class="tile-label">כמות צפיות</div></div>
+      <div class="tile tile-live"><div class="tile-num" id="liveUsers">—</div><div class="tile-label">משתמשים כעת באתר <span class="live-dot"></span></div></div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h3>מגמת פרסום כתבות לפי חודש</h3>
+        <div class="chart-wrap"><canvas id="chartMonth"></canvas></div>
+      </section>
+
+      <section class="card">
+        <h3>כתבות לפי קטגוריה</h3>
+        <div class="chart-wrap"><canvas id="chartCategory"></canvas></div>
+      </section>
+
+      <section class="card card-wide">
+        <h3>מצב הכתבות בתהליך (flow)</h3>
+        <div id="statusFlow" class="status-flow"></div>
+      </section>
+
+      <section class="card card-wide">
+        <h3>צפיות לאורך זמן לכתבה בודדת <small>(עם סימון נקודות פרסום עדכון)</small></h3>
+        <div class="field">
+          <label for="articleSelect">בחר כתבה</label>
+          <select id="articleSelect"><option value="">— בחר כתבה —</option></select>
+        </div>
+        <div class="chart-wrap"><canvas id="chartArticle"></canvas></div>
+      </section>
+
+      <section class="card card-wide">
+        <h3>צפיות לפי כתבה</h3>
+        <div class="table-wrap">
+          <table class="views-table">
+            <thead><tr><th>מזהה</th><th>כותרת</th><th>קטגוריה</th><th>צפיות</th></tr></thead>
+            <tbody id="viewsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <!-- Chart.js is allowed by the course spec (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="/js/analytics.js"></script>
+</body>
+</html>

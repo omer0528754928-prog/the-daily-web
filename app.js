@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 const app = express();
 
 app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views')); // where EJS templates live
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -25,6 +26,9 @@ app.use(session({
     sameSite: 'lax',
   },
 }));
+
+// --- Editor area (Member 5, Phase 6) ---
+app.use('/editor', require('./routes/editor'));
 
 async function startServer() {
   await connectDB();

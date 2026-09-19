@@ -1,0 +1,95 @@
+/* ==========================================================================
+   The Daily Web — Impact Analytics dashboard (Member 5)
+   Builds on editor.css (shared tokens). RTL, responsive, Flexbox + Grid.
+   ========================================================================== */
+
+.filters-bar {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 12px; color: var(--muted); }
+.field select, .field input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  background: #fff;
+}
+.field-actions { flex-direction: row; gap: 8px; }
+
+.dash { padding: 18px 20px 32px; }
+
+/* stat tiles */
+.tiles { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.tile {
+  flex: 1 1 180px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.tile-num { font-size: 34px; font-weight: 700; color: var(--brand); line-height: 1; }
+.tile-label { color: var(--muted); font-size: 14px; margin-top: 6px; }
+.tile-live .tile-num { color: var(--ok); }
+.live-dot {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--ok); margin-inline-start: 4px;
+  animation: pulse 1.6s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+/* card grid */
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.card h3 { margin: 0 0 12px; font-size: 16px; }
+.card h3 small { color: var(--muted); font-weight: 400; font-size: 12px; }
+.card-wide { grid-column: 1 / -1; }
+.chart-wrap { position: relative; height: 300px; }
+
+/* status flow diagram (pure HTML/CSS, no library) */
+.status-flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
+.flow-node {
+  flex: 1 1 150px;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+.flow-node .n { font-size: 26px; font-weight: 700; }
+.flow-node .t { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.flow-node.draft { border-color: #6366f1; }
+.flow-node.pending { border-color: #d97706; }
+.flow-node.published { border-color: #16a34a; }
+.flow-node.returned { border-color: #dc2626; }
+.flow-arrow { display: flex; align-items: center; padding: 0 6px; color: var(--muted); font-size: 22px; }
+.flow-branch { flex-basis: 100%; height: 8px; }
+
+/* table */
+.table-wrap { max-height: 420px; overflow: auto; }
+.views-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.views-table th, .views-table td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.views-table th { position: sticky; top: 0; background: var(--card); color: var(--muted); font-weight: 600; }
+.views-table tbody tr:hover { background: #f9fafb; }
+.views-table .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* responsive */
+@media (max-width: 860px) {
+  .grid { grid-template-columns: 1fr; }
+  .chart-wrap { height: 260px; }
+}
