@@ -1,0 +1,199 @@
+<%
+  // Sample data from the design. When the route passes real data, it is used instead.
+  const articles = locals.articles || [
+    { id: 1, title: 'תוכנית התחבורה החדשה: מה ישתנה בקווי האוטובוס', summary: 'המועצה אישרה הרחבת נתיבים ייחודיים בשלושה רבעים; ההפעלה תחל ברבעון הבא.', category: 'חדשות', reporter: 'דנה לוי', date: 'היום, 09:40', views: '12,840' },
+    { id: 2, title: 'הריבית נותרה ללא שינוי — מה זה אומר על המשכנתאות', summary: 'כלכלנים מעריכים שהורדה ראשונה תגיע רק בתחילת השנה הבאה.', category: 'כלכלה', reporter: 'עומר שגב', date: 'היום, 08:15', views: '9,310' },
+    { id: 3, title: 'ניצחון בדקה ה־94: סיכום המחזור', summary: 'שתי הפתעות בצמרת וכרטיס אדום שקבע את הטון בחצי השני.', category: 'ספורט', reporter: 'רותם אבן', date: 'אתמול, 23:05', views: '8,022' },
+    { id: 4, title: 'חוקרים פיתחו שיטה לזיהוי מוקדם של שיבושי שינה', summary: 'המדידה מבוססת על חיישנים פשוטים ולא דורשת מעבדה.', category: 'בריאות', reporter: 'נועה גל', date: 'אתמול, 19:20', views: '6,540' },
+    { id: 5, title: 'המדריך לבחירת מחשב נייד לסטודנטים', summary: 'מה חשוב באמת: סוללה, מסך או מעבד — ומה שווה לדלג עליו.', category: 'טכנולוגיה', reporter: 'איתי רם', date: 'אתמול, 16:00', views: '5,977' },
+    { id: 6, title: 'פסטיבל הקולנוע נפתח עם שלושה בכורות', summary: 'התוכנית כוללת רטרוספקטיבה ומפגשי יוצרים פתוחים לקהל.', category: 'תרבות ובידור', reporter: 'שירה מור', date: 'אתמול, 12:30', views: '4,110' },
+    { id: 7, title: 'מה מסתתר מאחורי עליית מחירי הדיור באזור', summary: 'נתוני העסקאות מראים פער גדל בין השכונות הוותיקות לחדשות.', category: 'כלכלה', reporter: 'עומר שגב', date: 'שלישי, 20:10', views: '3,860' },
+    { id: 8, title: 'עומסי הבוקר: המסלולים שהשתנו החודש', summary: 'שינויים בתמרורים ובעדיפות בצמתים המרכזיים.', category: 'חדשות', reporter: 'דנה לוי', date: 'שלישי, 07:45', views: '3,204' },
+  ];
+  const ticker = locals.ticker || [
+    'בנק ישראל: הריבית נותרה ללא שינוי',
+    'המועצה אישרה את תוכנית התחבורה הרב־שנתית',
+    'פסטיבל הקולנוע נפתח הערב עם שלושה בכורות',
+    'עדכון: שינויים בקווי האוטובוס מיום ראשון',
+  ];
+  const popular = locals.popular || articles.slice(0, 5);
+  const weather = locals.weather || {
+    city: 'תל אביב', temp: '27°', description: 'בהיר · לחות 62%',
+    forecast: [{ day: 'רבעי', temp: '28°' }, { day: 'חמישי', temp: '29°' }, { day: 'שישי', temp: '26°' }, { day: 'שבת', temp: '25°' }],
+  };
+  const hasMore = locals.hasMore ?? true;
+
+  const query = locals.query || {};
+  const sort = query.sort || 'date';
+  const view = query.view || 'all';
+  const sorts = [{ value: 'date', label: 'תאריך' }, { value: 'popular', label: 'פופולריות' }];
+  const views = [{ value: 'all', label: 'הכל' }, { value: 'unseen', label: 'לא נצפו' }, { value: 'seen', label: 'נצפו' }];
+  // Builds a feed link that keeps the current filters and changes only the given ones
+  const feedLink = (changes) => {
+    const params = new URLSearchParams({ ...query, ...changes });
+    params.delete('page');
+    return `/?${params}`;
+  };
+
+  const lead = articles[0];
+  const sideStories = articles.slice(1, 4);
+  const moreStories = articles.slice(4);
+%>
+<%- include('partials/head', { title: 'פיד הבית' }) %>
+<%- include('partials/header', { active: 'feed' }) %>
+
+<main class="container page">
+  <div class="ticker">
+    <span class="ticker__label">מבזקים</span>
+    <div class="ticker__window">
+      <div class="ticker__track">
+        <% [...ticker, ...ticker].forEach(item => { %>
+          <span class="ticker__item"><%= item %></span>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <form action="/" method="get" class="filters__group">
+      <label class="filters__label" for="category-select">קטגוריה</label>
+      <select id="category-select" name="category">
+        <option value="">הכל</option>
+        <% categories.forEach(category => { %>
+          <option value="<%= category %>" <%= query.category === category ? 'selected' : '' %>><%= category %></option>
+        <% }) %>
+      </select>
+      <input type="hidden" name="sort" value="<%= sort %>">
+      <input type="hidden" name="view" value="<%= view %>">
+      <button type="submit" class="btn btn-outline btn-sm">סינון</button>
+    </form>
+    <div class="filters__group">
+      <span class="filters__label">מיון</span>
+      <% sorts.forEach(option => { %>
+        <a href="<%= feedLink({ sort: option.value }) %>" class="pill <%= sort === option.value ? 'is-active' : '' %>"><%= option.label %></a>
+      <% }) %>
+    </div>
+    <div class="filters__group">
+      <span class="filters__label">תצוגה</span>
+      <% views.forEach(option => { %>
+        <a href="<%= feedLink({ view: option.value }) %>" class="pill <%= view === option.value ? 'is-active' : '' %>"><%= option.label %></a>
+      <% }) %>
+    </div>
+    <span class="filters__count"><%= articles.length %> כתבות</span>
+  </div>
+
+  <div class="with-sidebar">
+    <div class="feed">
+      <% if (lead) { %>
+        <div class="top-stories">
+          <a href="/articles/<%= lead.id %>" class="card lead">
+            <div class="img-placeholder lead__img"><span>תמונה ראשית · 1600×900</span></div>
+            <div class="lead__body">
+              <div class="meta">
+                <span class="tag"><%= lead.category %></span>
+                <span><%= lead.reporter %> · <%= lead.date %></span>
+              </div>
+              <h2 class="lead__title"><%= lead.title %></h2>
+              <p class="lead__summary"><%= lead.summary %></p>
+            </div>
+          </a>
+
+          <div class="side-stories">
+            <% sideStories.forEach(article => { %>
+              <a href="/articles/<%= article.id %>" class="card side-card">
+                <div class="img-placeholder side-card__img"></div>
+                <div class="side-card__body">
+                  <span class="category-label"><%= article.category %></span>
+                  <h3><%= article.title %></h3>
+                  <span class="meta"><%= article.date %> · <%= article.reporter %></span>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } else { %>
+        <p class="empty">לא נמצאו כתבות.</p>
+      <% } %>
+
+      <% if (moreStories.length) { %>
+        <section>
+          <div class="section-title">
+            <h2>עוד בחדשות</h2>
+            <span></span>
+          </div>
+          <div class="card-grid">
+            <% moreStories.forEach(article => { %>
+              <a href="/articles/<%= article.id %>" class="card grid-card">
+                <div class="img-placeholder grid-card__img"><span>תמונת כתבה</span></div>
+                <div class="grid-card__body">
+                  <div class="meta">
+                    <span class="tag tag-soft"><%= article.category %></span>
+                    <span><%= article.date %></span>
+                  </div>
+                  <h3><%= article.title %></h3>
+                  <p><%= article.summary %></p>
+                  <div class="grid-card__footer">
+                    <span><%= article.reporter %></span>
+                    <span>· <%= article.views %> צפיות</span>
+                  </div>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+
+      <% if (hasMore) { %>
+        <a href="<%= feedLink({}) %>&page=<%= (Number(query.page) || 1) + 1 %>" class="load-more">כתבות נוספות</a>
+      <% } %>
+    </div>
+
+    <aside class="sidebar">
+      <section class="widget weather">
+        <div class="weather__main">
+          <div>
+            <div class="weather__city">מזג אוויר · <%= weather.city %></div>
+            <div class="weather__temp"><%= weather.temp %></div>
+            <div class="weather__desc"><%= weather.description %></div>
+          </div>
+          <div class="weather__sun"></div>
+        </div>
+        <div class="weather__forecast">
+          <% weather.forecast.forEach(day => { %>
+            <div>
+              <span><%= day.day %></span>
+              <strong><%= day.temp %></strong>
+            </div>
+          <% }) %>
+        </div>
+        <div class="weather__source">מתעדכן מ־OpenWeatherMap · מטמון 15 דק׳</div>
+      </section>
+
+      <section class="widget">
+        <h3 class="widget__title">הנצפות ביותר</h3>
+        <ol class="popular">
+          <% popular.forEach((article, index) => { %>
+            <li>
+              <span class="popular__rank"><%= index + 1 %></span>
+              <a href="/articles/<%= article.id %>">
+                <span class="popular__title"><%= article.title %></span>
+                <span class="meta"><%= article.views %> צפיות</span>
+              </a>
+            </li>
+          <% }) %>
+        </ol>
+      </section>
+
+      <section class="widget widget--tinted">
+        <h3 class="widget__title">הניוזלטר היומי</h3>
+        <p class="widget__text">תקציר הכתבות החשובות, פעם ביום, בבוקר.</p>
+        <form action="/newsletter" method="post" class="newsletter">
+          <input type="email" name="email" placeholder="כתובת אימייל" required>
+          <button type="submit" class="btn btn-primary btn-sm">הרשמה</button>
+        </form>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

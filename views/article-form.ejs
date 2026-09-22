@@ -1,0 +1,146 @@
+<%
+  // One page for three modes: 'new' (empty form), 'edit' (fill in and send), 'view' (read only)
+  const mode = locals.mode || 'new';
+  const isNew = mode === 'new';
+  const isView = mode === 'view';
+
+  // Sample data from the design. When the route passes real data, it is used instead.
+  const article = locals.article || (isNew
+    ? { title: '', category: 'חדשות', summary: '', body: '', author: 'דנה לוי', status: 'בהכנה', updated: 'עכשיו', published: '—', returned: 'לא', views: '—', notes: [] }
+    : {
+        id: locals.id || 13,
+        title: 'בדיקה: כמה זמן לוקח להגיע לעבודה בשכונות החדשות',
+        category: 'חדשות',
+        summary: 'תקציר קצר שמופיע מתחת לכותרת בעמוד הכתבה ובכרטיס בפיד.',
+        body: 'המועצה אישרה אמש ברוב קולות את תוכנית התחבורה הרב־שנתית, הכוללת הרחבת נתיבי תחבורה ציבורית ושבילי אופניים בשלושה רבעים.\n\nהתוכנית תיכנס לתוקף בהדרגה, כאשר השלב הראשון מתוכנן להיפתח לציבור בתחילת הרבעון הבא.',
+        author: 'דנה לוי',
+        status: 'הוחזרה לתיקונים',
+        updated: 'אתמול, 18:20',
+        published: '—',
+        returned: 'כן · פעם אחת',
+        views: '—',
+        notes: [
+          { time: 'היום, 10:22', by: 'עורך: איתן ברק', text: 'חסר אימות מול דובר העירייה, ויש לקצר את הפסקה השלישית. לאחר התיקון אפשר להגיש מחדש.' },
+          { time: 'אתמול, 17:05', by: 'עורך: איתן ברק', text: 'הכותרת ארוכה מדי לפיד — לקצר לשבע מילים לכל היותר.' },
+          { time: 'שלישי, 09:40', by: 'עורך: מיכל רן', text: 'נא להוסיף כתובית וקרדיט צילום לתמונה הראשית.' },
+        ],
+      });
+  const isPublished = mode === 'edit' && article.status === 'פורסמה';
+
+  const pageTitle = isNew ? 'כתבה חדשה' : isView ? 'צפייה בפרטי הכתבה' : 'עריכת כתבה';
+  const subtitle = isNew ? 'טיוטה חדשה' : isView ? 'תצוגה בלבד — לא ניתן לערוך כתבה שממתינה לאישור עורך' : 'טיוטה';
+  const formAction = isNew ? '/reporter/articles' : `/reporter/articles/${article.id}`;
+%>
+<%- include('partials/head', { title: pageTitle }) %>
+<%- include('partials/header', { active: 'reporter' }) %>
+
+<main class="container container--form page">
+  <form action="<%= formAction %>" method="post" enctype="multipart/form-data" class="card form-card"
+        data-autosave="<%= isView ? 'off' : 'on' %>" data-article-id="<%= article.id || '' %>">
+    <div class="form-card__head">
+      <div class="form-card__heading">
+        <h1><%= pageTitle %></h1>
+        <p><%= subtitle %></p>
+      </div>
+      <span class="status" data-status="<%= article.status %>"><%= article.status %></span>
+    </div>
+
+    <div class="form-card__body">
+      <% if (locals.problems && problems.length) { %>
+        <div class="alert alert-error">
+          <% problems.forEach(problem => { %>
+            <div><%= problem %></div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <% if (!isNew) { %>
+        <div class="notes">
+          <div class="notes__head">
+            <strong>הערות עורך</strong>
+            <span class="badge">לקריאה בלבד</span>
+          </div>
+          <% if (article.notes.length) { %>
+            <div class="notes__latest">
+              <div class="notes__latest-label">ההערה האחרונה · דורשת טיפול</div>
+              <p><%= article.notes[0].text %></p>
+            </div>
+            <% article.notes.forEach(note => { %>
+              <div class="note">
+                <span class="meta"><%= note.time %> · <%= note.by %></span>
+                <p><%= note.text %></p>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <p class="hint">אין הערות עורך לכתבה זו.</p>
+          <% } %>
+        </div>
+      <% } %>
+
+      <div class="details">
+        <div><span>כתב/ת</span><strong><%= article.author %></strong></div>
+        <div><span>עודכן לאחרונה</span><strong><%= article.updated %></strong></div>
+        <div><span>תאריך פרסום</span><strong><%= article.published %></strong></div>
+        <div><span>הוחזרה לתיקונים</span><strong class="<%= article.returned === 'לא' ? '' : 'text-warning' %>"><%= article.returned %></strong></div>
+        <div><span>צפיות</span><strong><%= article.views %></strong></div>
+      </div>
+
+      <fieldset class="form-fields" <%= isView ? 'disabled' : '' %>>
+        <label class="field">כותרת
+          <input type="text" name="title" value="<%= article.title %>" placeholder="כותרת הכתבה" class="field__title" required>
+        </label>
+
+        <div class="field-row">
+          <label class="field">קטגוריה
+            <select name="category">
+              <% categories.forEach(category => { %>
+                <option value="<%= category %>" <%= article.category === category ? 'selected' : '' %>><%= category %></option>
+              <% }) %>
+            </select>
+          </label>
+          <div class="field">
+            <span class="field__label">תמונה ראשית</span>
+            <span class="image-current" data-image-current <%= article.image ? '' : 'hidden' %>>
+              <img src="<%= article.image || '' %>" alt="התמונה הראשית של הכתבה" data-image-preview>
+              <span class="hint">תמונה נוכחית</span>
+            </span>
+            <%# the file input itself is hidden, so the browser's "לא נבחר קובץ" never shows %>
+            <input type="file" id="article-image" name="image" accept="image/*" class="file-input">
+            <label for="article-image" class="btn btn-outline btn-sm file-button" data-image-button>
+              <%= article.image ? 'החלפת תמונה' : 'בחירת תמונה' %>
+            </label>
+            <span class="hint" data-image-name hidden></span>
+          </div>
+        </div>
+
+        <label class="field">תקציר
+          <textarea name="summary" rows="3"><%= article.summary %></textarea>
+        </label>
+
+        <label class="field">גוף הכתבה
+          <textarea name="body" rows="10" class="field__body"><%= article.body %></textarea>
+        </label>
+
+        <% if (isPublished) { %>
+          <label class="field republish">תאריך פרסום מחדש
+            <span class="hint">הכתבה כבר פורסמה (<%= article.published %>) — הגרסה המעודכנת תעבור אישור עורך ותפורסם מחדש במועד שייבחר. עד לאישור, הגרסה שאושרה בעבר ממשיכה להיות מוצגת לציבור.</span>
+            <input type="datetime-local" name="republishAt">
+          </label>
+        <% } %>
+      </fieldset>
+    </div>
+
+    <div class="form-card__foot">
+      <a href="/reporter" class="btn btn-outline">חזרה לרשימה</a>
+      <% if (!isView) { %>
+        <div class="form-card__submit">
+          <span class="hint" data-autosave-status hidden></span>
+          <button type="submit" name="action" value="submit" class="btn btn-primary">שליחה לאישור עורך</button>
+        </div>
+      <% } %>
+    </div>
+  </form>
+</main>
+
+<script src="/js/autosave.js" defer></script>
+<%- include('partials/footer') %>
