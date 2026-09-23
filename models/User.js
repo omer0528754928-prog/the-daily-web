@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     username: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    passwordHash: {
+      type: String,
+      select: false,
+    },
     role: { type: String, enum: Object.values(ROLES), required: true },
   },
   { timestamps: true },
