@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
       select: false,
     },
     role: { type: String, enum: Object.values(ROLES), required: true },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
