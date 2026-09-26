@@ -1,31 +1,13 @@
 <%
-  // Sample data from the design. When the route passes real data, it is used instead.
-  const article = locals.article || {
-    id: locals.id || 1,
-    title: 'תוכנית התחבורה החדשה: מה ישתנה בקווי האוטובוס',
-    summary: 'המועצה אישרה הרחבת נתיבים ייחודיים בשלושה רבעים; ההפעלה תחל ברבעון הבא.',
-    category: 'חדשות',
-    reporter: 'דנה לוי',
-    date: 'היום, 09:40',
-    views: '12,840',
-    paragraphs: [
-      'המועצה אישרה אמש ברוב של שנים־עשר תומכים מול שלושה מתנגדים את תוכנית התחבורה הרב־שנתית, שתיכנס לתוקף בהדרגה במהלך השנה הקרובה. התוכנית כוללת הרחבת נתיבי תחבורה ציבורית בשלושה רבעים ושינוי בסדרי העדיפות בצמתים המרכזיים.',
-      'לפי המסמכים שהוצגו בדיון, השלב הראשון יתמקד בציר המרכזי, שבו נרשמים כיום זמני הנסיעה הארוכים ביותר בשעות הבוקר. בשלב השני יתווספו שבילי אופניים מופרדים, ובשלב השלישי ייבחן שינוי בתחנות ההחלפה.',
-      'מתנגדי התוכנית טענו בדיון כי לוח הזמנים אינו מציאותי, ודרשו לפרסם את ההערכות התקציביות במלואן. בתשובה נמסר כי דוח מפורט יוצג לציבור בתוך שלושים יום.',
-      'גורמים במערכת התחבורה אמרו כי ההצלחה תיבחן בשני מדדים בלבד: זמן נסיעה ממוצע בשעת העומס, ושיעור הנוסעים שעברו מרכב פרטי לתחבורה ציבורית.',
-    ],
-  };
+  // article and related always come from the controller (see controllers/articleController.js)
+  const { article, related } = locals;
+  // Sample data from the design, until the Comment model is added
   const comments = locals.comments || [
     { name: 'יעל ב.', time: 'לפני 12 דקות', text: 'כתבה מסודרת, אבל חסרה התייחסות להשפעה על הפריפריה.' },
     { name: 'אורח', time: 'לפני 40 דקות', text: 'הגרפים בסוף עוזרים מאוד להבין את המגמה. תודה.' },
     { name: 'משה ק.', time: 'לפני שעה', text: 'אשמח להמשך סדרה בנושא הזה.' },
   ];
-  const related = locals.related || [
-    { id: 5, title: 'המדריך לבחירת מחשב נייד לסטודנטים', date: 'אתמול, 16:00', reporter: 'איתי רם' },
-    { id: 6, title: 'פסטיבל הקולנוע נפתח עם שלושה בכורות', date: 'אתמול, 12:30', reporter: 'שירה מור' },
-    { id: 7, title: 'מה מסתתר מאחורי עליית מחירי הדיור באזור', date: 'שלישי, 20:10', reporter: 'עומר שגב' },
-    { id: 8, title: 'עומסי הבוקר: המסלולים שהשתנו החודש', date: 'שלישי, 07:45', reporter: 'דנה לוי' },
-  ];
+  // Sample data until the weather widget (Member 2) is connected
   const weather = locals.weather || { city: 'תל אביב', temp: '27°' };
 %>
 <%- include('partials/head', { title: article.title }) %>
@@ -34,19 +16,25 @@
 <main class="container container--narrow page">
   <div class="article-layout">
     <article class="card article">
-      <div class="breadcrumb">
+      <nav class="breadcrumb" aria-label="מיקום באתר">
         <a href="/">ראשי</a> /
         <a href="/?category=<%= encodeURIComponent(article.category) %>"><%= article.category %></a>
-      </div>
+      </nav>
       <h1 class="article__title"><%= article.title %></h1>
-      <p class="article__summary"><%= article.summary %></p>
+      <% if (article.summary) { %>
+        <p class="article__summary"><%= article.summary %></p>
+      <% } %>
       <div class="byline">
         <span class="avatar"></span>
         <strong><%= article.reporter %></strong>
-        <span>· <%= article.date %></span>
+        <span>· <time datetime="<%= article.publishedAt %>"><%= article.date %></time></span>
         <span class="byline__views"><%= article.views %> צפיות</span>
       </div>
-      <div class="img-placeholder article__img"><span>תמונה ראשית · קרדיט צילום</span></div>
+      <% if (article.image) { %>
+        <img src="<%= article.image %>" alt="<%= article.title %>" class="article__img">
+      <% } else { %>
+        <div class="img-placeholder article__img"><span>תמונה ראשית · קרדיט צילום</span></div>
+      <% } %>
       <div class="article__body">
         <% article.paragraphs.forEach(paragraph => { %>
           <p><%= paragraph %></p>
@@ -98,14 +86,18 @@
 
       <section class="widget">
         <h3 class="widget__title">כתבות נוספות בקטגוריה</h3>
-        <ul class="related">
-          <% related.forEach(item => { %>
-            <li>
-              <a href="/articles/<%= item.id %>"><%= item.title %></a>
-              <span class="meta"><%= item.date %> · <%= item.reporter %></span>
-            </li>
-          <% }) %>
-        </ul>
+        <% if (related.length) { %>
+          <ul class="related">
+            <% related.forEach(item => { %>
+              <li>
+                <a href="/articles/<%= item.id %>"><%= item.title %></a>
+                <span class="meta"><time datetime="<%= item.publishedAt %>"><%= item.date %></time> · <%= item.reporter %></span>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="hint">אין כרגע כתבות נוספות בקטגוריה הזו.</p>
+        <% } %>
       </section>
     </aside>
   </div>

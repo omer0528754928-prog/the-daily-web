@@ -632,6 +632,8 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
   background-color: #dde9f9;
   background-image: repeating-linear-gradient(135deg, #d1dff2 0 12px, #e2ecf9 12px 24px);
 }
+/* A real uploaded image fills the same box as the placeholder without stretching */
+img.article__img { width: 100%; object-fit: cover; }
 .article__body { display: flex; flex-direction: column; gap: 16px; font-size: 17px; line-height: 1.85; color: var(--text-body); }
 .article__body p { text-wrap: pretty; }
 
