@@ -18,6 +18,7 @@
     "start": "node app.js",
     "dev": "node --watch app.js",
     "seed": "node scripts/seed.js",
+    "seed:users": "node scripts/seedUsers.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
