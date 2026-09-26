@@ -9,6 +9,7 @@ const CATEGORIES = require('./config/categories');
 const devAuth = require('./middleware/devAuth');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const reporterRoutes = require('./routes/reporterRoutes');
+const articleRoutes = require('./routes/articleRoutes');
 const apiRoutes = require('./routes/api');
 
 const app = express();
@@ -39,10 +40,10 @@ app.use('/api', apiRoutes);
 
 // Pages (HTML)
 app.use('/reporter', reporterRoutes);
+app.use('/articles', articleRoutes);
 
 // Pages (for now they show the design's sample data)
 app.get('/', (req, res) => res.render('home', { query: req.query }));
-app.get('/articles/:id', (req, res) => res.render('article', { id: req.params.id }));
 app.get('/login', (req, res) => res.render('login'));
 app.get('/editor', (req, res) => res.render('editor', { query: req.query }));
 app.get('/editor/articles/:id/review', (req, res) => res.render('review', { id: req.params.id }));
