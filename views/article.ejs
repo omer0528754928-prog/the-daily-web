@@ -1,12 +1,10 @@
 <%
-  // article and related always come from the controller (see controllers/articleController.js)
-  const { article, related } = locals;
-  // Sample data from the design, until the Comment model is added
-  const comments = locals.comments || [
-    { name: 'יעל ב.', time: 'לפני 12 דקות', text: 'כתבה מסודרת, אבל חסרה התייחסות להשפעה על הפריפריה.' },
-    { name: 'אורח', time: 'לפני 40 דקות', text: 'הגרפים בסוף עוזרים מאוד להבין את המגמה. תודה.' },
-    { name: 'משה ק.', time: 'לפני שעה', text: 'אשמח להמשך סדרה בנושא הזה.' },
-  ];
+  // These always come from the controller (see controllers/articleController.js).
+  // comments is the newest page only; commentCount is the total, for the heading.
+  const { article, related, comments, commentCount, commentLimits } = locals;
+  // After a comment that did not pass validation: what the guest typed, and what to fix
+  const commentForm = locals.commentForm || {};
+  const commentErrors = locals.commentErrors || [];
   // Sample data until the weather widget (Member 2) is connected
   const weather = locals.weather || { city: 'תל אביב', temp: '27°' };
 %>
@@ -41,35 +39,45 @@
         <% }) %>
       </div>
 
-      <section class="comments">
-        <h2>תגובות (<%= comments.length %>)</h2>
+      <section class="comments" id="comments">
+        <h2>תגובות (<%= commentCount %>)</h2>
         <form action="/articles/<%= article.id %>/comments" method="post" class="comment-form">
           <div class="comment-form__row">
-            <input type="text" name="name" placeholder="שם (אורח)" maxlength="40">
+            <input type="text" name="name" placeholder="שם (אורח)" maxlength="<%= commentLimits.authorName %>" value="<%= commentForm.name || '' %>">
             <span class="hint">עד 3 תגובות בדקה מאותו מכשיר</span>
           </div>
-          <textarea name="text" placeholder="כתבו תגובה…" required></textarea>
+          <textarea name="text" placeholder="כתבו תגובה…" maxlength="<%= commentLimits.text %>" required><%= commentForm.text || '' %></textarea>
           <div class="comment-form__row">
             <button type="submit" class="btn btn-primary">פרסום תגובה</button>
             <% if (locals.rateLimited) { %>
               <span class="alert alert-error">חרגת מהמגבלה — נסו שוב בעוד דקה</span>
             <% } %>
+            <% commentErrors.forEach(message => { %>
+              <span class="alert alert-error" role="alert"><%= message %></span>
+            <% }) %>
           </div>
         </form>
-        <div class="comment-list">
-          <% comments.forEach(comment => { %>
-            <div class="comment">
-              <span class="avatar"></span>
-              <div>
-                <div class="comment__head">
-                  <strong><%= comment.name %></strong>
-                  <span class="meta"><%= comment.time %></span>
+        <% if (comments.length) { %>
+          <div class="comment-list">
+            <% comments.forEach(comment => { %>
+              <article class="comment">
+                <span class="avatar"></span>
+                <div>
+                  <div class="comment__head">
+                    <strong><%= comment.name %></strong>
+                    <time class="meta" datetime="<%= comment.createdAt %>"><%= comment.time %></time>
+                  </div>
+                  <p><%= comment.text %></p>
                 </div>
-                <p><%= comment.text %></p>
-              </div>
-            </div>
-          <% }) %>
-        </div>
+              </article>
+            <% }) %>
+          </div>
+          <% if (commentCount > comments.length) { %>
+            <p class="hint">מוצגות <%= comments.length %> התגובות האחרונות מתוך <%= commentCount %></p>
+          <% } %>
+        <% } else { %>
+          <p class="hint">עדיין אין תגובות לכתבה הזו. אפשר להיות הראשונים להגיב.</p>
+        <% } %>
       </section>
     </article>
 
