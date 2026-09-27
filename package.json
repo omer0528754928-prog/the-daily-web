@@ -16,7 +16,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "node --watch app.js",
+    "dev": "nodemon app.js",
     "seed": "node scripts/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -26,5 +26,8 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "mongoose": "^9.10.1"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.14"
   }
 }

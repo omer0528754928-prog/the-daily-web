@@ -18,9 +18,9 @@
   ];
   const popular = locals.popular || articles.slice(0, 5);
   const weather = locals.weather || {
-    city: 'תל אביב', temp: '27°', description: 'בהיר · לחות 62%',
-    forecast: [{ day: 'רבעי', temp: '28°' }, { day: 'חמישי', temp: '29°' }, { day: 'שישי', temp: '26°' }, { day: 'שבת', temp: '25°' }],
+    city: 'תל אביב', temp: '27°', description: 'בהיר · לחות 62%'
   };
+  const forecast=locals.forecast||{forecast: [{ day: 'רבעי', temp: '28°' }, { day: 'חמישי', temp: '29°' }, { day: 'שישי', temp: '26°' }, { day: 'שבת', temp: '25°' }]}
   const hasMore = locals.hasMore ?? true;
 
   const query = locals.query || {};
@@ -159,7 +159,7 @@
           <div class="weather__sun"></div>
         </div>
         <div class="weather__forecast">
-          <% weather.forecast.forEach(day => { %>
+          <% forecast.forEach(day => { %>
             <div>
               <span><%= day.day %></span>
               <strong><%= day.temp %></strong>
