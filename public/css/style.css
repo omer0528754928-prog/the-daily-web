@@ -560,6 +560,10 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
 .weather__temp { font-size: 40px; font-weight: 700; line-height: 1.1; }
 .weather__desc { font-size: 14px; opacity: 0.85; }
 .weather__sun { width: 56px; height: 56px; flex: 0 0 auto; border-radius: 50%; background: var(--yellow-sun); }
+.weather__icon {  width: 114px;
+  height: 114px;
+  margin: -29px;  /* (114 - 56) / 2 → takes up the same space as the 56px sun */
+   flex: 0 0 auto; border-radius: 50%; }
 .weather__forecast {
   display: flex;
   justify-content: space-between;

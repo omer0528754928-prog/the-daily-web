@@ -17,10 +17,8 @@
     'עדכון: שינויים בקווי האוטובוס מיום ראשון',
   ];
   const popular = locals.popular || articles.slice(0, 5);
-  const weather = locals.weather || {
-    city: 'תל אביב', temp: '27°', description: 'בהיר · לחות 62%'
-  };
-  const forecast=locals.forecast||{forecast: [{ day: 'רבעי', temp: '28°' }, { day: 'חמישי', temp: '29°' }, { day: 'שישי', temp: '26°' }, { day: 'שבת', temp: '25°' }]}
+  const weather = locals.weather || null;
+  const forecast = locals.forecast || null;
   const hasMore = locals.hasMore ?? true;
 
   const query = locals.query || {};
@@ -150,22 +148,33 @@
 
     <aside class="sidebar">
       <section class="widget weather">
-        <div class="weather__main">
-          <div>
-            <div class="weather__city">מזג אוויר · <%= weather.city %></div>
-            <div class="weather__temp"><%= weather.temp %></div>
-            <div class="weather__desc"><%= weather.description %></div>
-          </div>
-          <div class="weather__sun"></div>
-        </div>
-        <div class="weather__forecast">
-          <% forecast.forEach(day => { %>
+        <% if (weather) { %>
+          <div class="weather__main">
             <div>
-              <span><%= day.day %></span>
-              <strong><%= day.temp %></strong>
+              <div class="weather__city">מזג אוויר · <%= weather.city %></div>
+              <div class="weather__temp"><%= weather.temp %></div>
+              <div class="weather__desc"><%= weather.condition[1] %> · לחות <%= weather.humidity %></div>
             </div>
-          <% }) %>
-        </div>
+            <img class="weather__icon" src="https://openweathermap.org/img/wn/<%= weather.icon %>@4x.png" alt="<%= weather.condition[1] %>">
+          </div>
+        <% } else { %>
+          <div class="weather__main">
+            <div>
+              <div class="weather__city">מזג אוויר</div>
+              <div class="weather__desc">מזג האוויר אינו זמין כרגע</div>
+            </div>
+          </div>
+        <% } %>
+        <% if (forecast && forecast.length) { %>
+          <div class="weather__forecast">
+            <% forecast.forEach(day => { %>
+              <div>
+                <span><%= day.day %></span>
+                <strong><%= day.temp %></strong>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
         <div class="weather__source">מתעדכן מ־OpenWeatherMap · מטמון 15 דק׳</div>
       </section>
 
