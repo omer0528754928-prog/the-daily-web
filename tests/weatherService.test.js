@@ -207,3 +207,56 @@ for (const { name, call, temp } of targets) {
     });
   });
 }
+
+
+// fetchedAt tells the widget when the data was really fetched ("updated at HH:MM"),
+// so it must stay the time of the last successful API call - also when old data is returned.
+describe('getCurrentWeather fetchedAt', () => {
+  let service;
+
+  beforeEach(() => {
+    now = realNow();
+    Date.now = () => now;
+    console.error = () => {};
+    fakeApi();
+    service = loadService();
+  });
+
+  afterEach(() => {
+    Date.now = realNow;
+    global.fetch = realFetch;
+    console.error = realConsoleError;
+  });
+
+  it('is the time of the API call', async () => {
+    const fetchTime = now;
+    const weather = await service.getCurrentWeather('key', 1, 2);
+    assert.strictEqual(weather.fetchedAt, fetchTime);
+  });
+
+  it('stays the same while the cache is fresh', async () => {
+    const first = await service.getCurrentWeather('key', 1, 2);
+    advance(14 * MIN);
+    const second = await service.getCurrentWeather('key', 1, 2);
+    assert.strictEqual(second.fetchedAt, first.fetchedAt);
+    assert.strictEqual(api.calls, 1);
+  });
+
+  it('moves to the new call time after the cache expires', async () => {
+    const first = await service.getCurrentWeather('key', 1, 2);
+    advance(15 * MIN + 1);
+    const second = await service.getCurrentWeather('key', 1, 2);
+    assert.strictEqual(second.fetchedAt, now);
+    assert.notStrictEqual(second.fetchedAt, first.fetchedAt);
+    assert.strictEqual(api.calls, 2);
+  });
+
+  it('keeps the old time when the API fails and old data is returned', async () => {
+    const first = await service.getCurrentWeather('key', 1, 2);
+    advance(16 * MIN);
+    api.mode = 'fail';
+    const second = await service.getCurrentWeather('key', 1, 2);
+    assert.strictEqual(second.fetchedAt, first.fetchedAt);
+    assert.strictEqual(api.calls, 2);
+  });
+});

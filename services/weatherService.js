@@ -28,10 +28,11 @@ const getCurrentWeather = async (key,lat,lon) => {
             throw new Error(`HTTP ERROR ${res.status}`);
         }
         const data=await res.json();
+        const fetchedAt = Date.now();
          const output={city: data.name,temp: String(Math.round(data.main.temp))+'°',condition: [data.weather[0].main,data.weather[0].description]
-                         ,humidity: String(data.main.humidity)+'%',icon: data.weather[0].icon}
+                         ,humidity: String(data.main.humidity)+'%',icon: data.weather[0].icon,fetchedAt}
 
-        cache={data:output,loc,fetchedAt:Date.now()}
+        cache={data:output,loc,fetchedAt}
         weatherFailedAt=null;
         return output;
 
@@ -90,7 +91,7 @@ const getForecast = async (key, lat, lon) => {
         .slice(0, 4)
         .map(([, { item, local }]) => ({
           day: local.toLocaleDateString('he-IL', { weekday: 'long', timeZone: 'UTC' }).replace(/יום /, ""),
-          temp: String(Math.round(item.main.temp))+'°',
+          temp: String(Math.round(item.main.temp))+'°'
         }));
 
       forecastCache = { data: forecast, loc, fetchedAt: Date.now() };

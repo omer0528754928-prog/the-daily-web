@@ -39,7 +39,7 @@
 %>
 <%- include('partials/head', { title: 'פיד הבית' }) %>
 <%- include('partials/header', { active: 'feed' }) %>
-
+<script src="/js/weather.js" defer></script>
 <main class="container page">
   <div class="ticker">
     <span class="ticker__label">מבזקים</span>
@@ -147,37 +147,7 @@
     </div>
 
     <aside class="sidebar">
-      <section class="widget weather">
-        <% if (weather) { %>
-          <div class="weather__main">
-            <div>
-              <div class="weather__city">מזג אוויר · <%= weather.city %></div>
-              <div class="weather__temp"><%= weather.temp %></div>
-              <div class="weather__desc"><%= weather.condition[1] %> · לחות <%= weather.humidity %></div>
-            </div>
-            <img class="weather__icon" src="https://openweathermap.org/img/wn/<%= weather.icon %>@4x.png" alt="<%= weather.condition[1] %>">
-          </div>
-        <% } else { %>
-          <div class="weather__main">
-            <div>
-              <div class="weather__city">מזג אוויר</div>
-              <div class="weather__desc">מזג האוויר אינו זמין כרגע</div>
-            </div>
-          </div>
-        <% } %>
-        <% if (forecast && forecast.length) { %>
-          <div class="weather__forecast">
-            <% forecast.forEach(day => { %>
-              <div>
-                <span><%= day.day %></span>
-                <strong><%= day.temp %></strong>
-              </div>
-            <% }) %>
-          </div>
-        <% } %>
-        <div class="weather__source">מתעדכן מ־OpenWeatherMap · מטמון 15 דק׳</div>
-      </section>
-
+      <%- include('partials/weatherWidgetBig', { weather, forecast }) %>
       <section class="widget">
         <h3 class="widget__title">הנצפות ביותר</h3>
         <ol class="popular">
