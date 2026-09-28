@@ -1,5 +1,5 @@
-<section class="widget weather">
-        <% if (weather)  { %> data-fetched-at="<%= weather.fetchedAt %>"<% } %>>
+<section class="widget weather"<% if (weather) { %> data-fetched-at="<%= weather.fetchedAt %>"<% } %>>
+        <% if (weather) { %>
           <div class="weather__main">
             <div>
               <div class="weather__city">מזג אוויר · <%= weather.city %></div>
