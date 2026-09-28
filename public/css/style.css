@@ -173,6 +173,40 @@ input, textarea, select, button { font-family: inherit; }
   white-space: nowrap;
 }
 .topbar__login:hover { background: #ffffff1f; color: #fff; text-decoration: none; }
+.topbar__account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-inline-start: auto;
+  font-size: 13px;
+}
+.topbar__account form { margin: 0; }
+.topbar__account button.topbar__login {
+  margin: 0;
+  background: transparent;
+  line-height: normal;
+  cursor: pointer;
+}
+.topbar__account button.topbar__login:hover { background: #ffffff1f; }
+.logout-dialog {
+  width: min(400px, calc(100% - 32px));
+  margin: auto;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+}
+.logout-dialog::backdrop { background: #0d1b2f66; }
+.logout-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+.logout-dialog__actions form { margin: 0; }
 
 .site-header { background: var(--surface); border-bottom: 1px solid var(--border); }
 .site-header__inner {
