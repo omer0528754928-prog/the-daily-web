@@ -29,7 +29,36 @@
       <a href="<%= link.href %>" class="topbar__link <%= active === link.key ? 'is-active' : '' %>"><%= link.label %></a>
     <% }) %>
   </nav>
-  <a href="/login" class="topbar__login">התחברות</a>
+  <% if (locals.currentUser) { %>
+    <div class="topbar__account">
+      <span>שלום, <%= currentUser.name %></span>
+      <button type="button" class="topbar__login" onclick="document.getElementById('logout-dialog').showModal()">התנתקות</button>
+    </div>
+    <dialog id="logout-dialog" class="logout-dialog" dir="rtl" aria-labelledby="logout-question">
+      <p id="logout-question">האם אתה בטוח שברצונך להתנתק?</p>
+      <div class="logout-dialog__actions">
+        <form method="dialog">
+          <button type="submit" class="btn btn-outline" autofocus>לא</button>
+        </form>
+        <form action="/logout" method="POST">
+          <button type="submit" class="btn btn-primary">כן</button>
+        </form>
+      </div>
+    </dialog>
+    <script>
+      setInterval(async () => {
+        if (document.visibilityState !== 'visible') return;
+        try {
+          const response = await fetch('/session/keep-alive', { method: 'POST' });
+          if (response.status === 401) window.location.href = '/login';
+        } catch {
+          // A temporary network failure can wait until the next interval.
+        }
+      }, 4 * 60 * 1000);
+    </script>
+  <% } else { %>
+    <a href="/login" class="topbar__login">התחברות</a>
+  <% } %>
 </div>
 
 <header class="site-header">
