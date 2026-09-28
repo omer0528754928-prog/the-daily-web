@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { recordLog } = require('../services/loggingService');
 const { isApiRequest } = require('../utils/HttpError');
 const { toProblemMessages } = require('../presenters/articleFormPresenter');
 
@@ -63,7 +64,20 @@ function errorHandler(err, req, res, next) {
   if (res.headersSent) return next(err);
 
   const { status, message, details } = normalizeError(err);
-  if (status >= 500) console.error(err);
+  if (status >= 500) {
+    const userId = req.session?.user?.id;
+    void recordLog({
+      level: 'error',
+      source: 'global_error_handler',
+      event: 'server_error',
+      // Raw error messages and URL parameters can contain secrets.
+      message: 'Unexpected server error',
+      userId: typeof userId === 'string' && /^[a-f\d]{24}$/i.test(userId) ? userId : undefined,
+      method: req.method,
+      path: typeof req.route?.path === 'string' ? req.route.path : undefined,
+      statusCode: status,
+    });
+  }
 
   if (isApiRequest(req)) {
     const body = { error: status >= 500 ? 'Internal server error' : message };
