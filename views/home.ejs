@@ -1,15 +1,5 @@
 <%
-  // Sample data from the design. When the route passes real data, it is used instead.
-  const articles = locals.articles || [
-    { id: 1, title: 'תוכנית התחבורה החדשה: מה ישתנה בקווי האוטובוס', summary: 'המועצה אישרה הרחבת נתיבים ייחודיים בשלושה רבעים; ההפעלה תחל ברבעון הבא.', category: 'חדשות', reporter: 'דנה לוי', date: 'היום, 09:40', views: '12,840' },
-    { id: 2, title: 'הריבית נותרה ללא שינוי — מה זה אומר על המשכנתאות', summary: 'כלכלנים מעריכים שהורדה ראשונה תגיע רק בתחילת השנה הבאה.', category: 'כלכלה', reporter: 'עומר שגב', date: 'היום, 08:15', views: '9,310' },
-    { id: 3, title: 'ניצחון בדקה ה־94: סיכום המחזור', summary: 'שתי הפתעות בצמרת וכרטיס אדום שקבע את הטון בחצי השני.', category: 'ספורט', reporter: 'רותם אבן', date: 'אתמול, 23:05', views: '8,022' },
-    { id: 4, title: 'חוקרים פיתחו שיטה לזיהוי מוקדם של שיבושי שינה', summary: 'המדידה מבוססת על חיישנים פשוטים ולא דורשת מעבדה.', category: 'בריאות', reporter: 'נועה גל', date: 'אתמול, 19:20', views: '6,540' },
-    { id: 5, title: 'המדריך לבחירת מחשב נייד לסטודנטים', summary: 'מה חשוב באמת: סוללה, מסך או מעבד — ומה שווה לדלג עליו.', category: 'טכנולוגיה', reporter: 'איתי רם', date: 'אתמול, 16:00', views: '5,977' },
-    { id: 6, title: 'פסטיבל הקולנוע נפתח עם שלושה בכורות', summary: 'התוכנית כוללת רטרוספקטיבה ומפגשי יוצרים פתוחים לקהל.', category: 'תרבות ובידור', reporter: 'שירה מור', date: 'אתמול, 12:30', views: '4,110' },
-    { id: 7, title: 'מה מסתתר מאחורי עליית מחירי הדיור באזור', summary: 'נתוני העסקאות מראים פער גדל בין השכונות הוותיקות לחדשות.', category: 'כלכלה', reporter: 'עומר שגב', date: 'שלישי, 20:10', views: '3,860' },
-    { id: 8, title: 'עומסי הבוקר: המסלולים שהשתנו החודש', summary: 'שינויים בתמרורים ובעדיפות בצמתים המרכזיים.', category: 'חדשות', reporter: 'דנה לוי', date: 'שלישי, 07:45', views: '3,204' },
-  ];
+  const articles = locals.articles || [];
   const ticker = locals.ticker || [
     'בנק ישראל: הריבית נותרה ללא שינוי',
     'המועצה אישרה את תוכנית התחבורה הרב־שנתית',
@@ -19,7 +9,7 @@
   const popular = locals.popular || articles.slice(0, 5);
   const weather = locals.weather || null;
   const forecast = locals.forecast || null;
-  const hasMore = locals.hasMore ?? true;
+  const hasMore = locals.hasMore ?? false;
 
   const query = locals.query || {};
   const sort = query.sort || 'date';
@@ -29,7 +19,6 @@
   // Builds a feed link that keeps the current filters and changes only the given ones
   const feedLink = (changes) => {
     const params = new URLSearchParams({ ...query, ...changes });
-    params.delete('page');
     return `/?${params}`;
   };
 
@@ -63,6 +52,9 @@
       </select>
       <input type="hidden" name="sort" value="<%= sort %>">
       <input type="hidden" name="view" value="<%= view %>">
+      <% if (query.q) { %>
+        <input type="hidden" name="q" value="<%= query.q %>">
+      <% } %>
       <button type="submit" class="btn btn-outline btn-sm">סינון</button>
     </form>
     <div class="filters__group">
@@ -77,14 +69,16 @@
         <a href="<%= feedLink({ view: option.value }) %>" class="pill <%= view === option.value ? 'is-active' : '' %>"><%= option.label %></a>
       <% }) %>
     </div>
-    <span class="filters__count"><%= articles.length %> כתבות</span>
+    <% if (query.q) { %>
+      <span class="filters__count">תוצאות עבור "<%= query.q %>"</span>
+    <% } %>
   </div>
 
   <div class="with-sidebar">
     <div class="feed">
       <% if (lead) { %>
         <div class="top-stories">
-          <a href="/articles/<%= lead.id %>" class="card lead">
+          <a href="/articles/<%= lead.id %>" class="card lead" data-id="<%= lead.id %>">
             <div class="img-placeholder lead__img"><span>תמונה ראשית · 1600×900</span></div>
             <div class="lead__body">
               <div class="meta">
@@ -98,7 +92,7 @@
 
           <div class="side-stories">
             <% sideStories.forEach(article => { %>
-              <a href="/articles/<%= article.id %>" class="card side-card">
+              <a href="/articles/<%= article.id %>" class="card side-card" data-id="<%= article.id %>">
                 <div class="img-placeholder side-card__img"></div>
                 <div class="side-card__body">
                   <span class="category-label"><%= article.category %></span>
@@ -113,37 +107,33 @@
         <p class="empty">לא נמצאו כתבות.</p>
       <% } %>
 
-      <% if (moreStories.length) { %>
-        <section>
-          <div class="section-title">
-            <h2>עוד בחדשות</h2>
-            <span></span>
-          </div>
-          <div class="card-grid">
-            <% moreStories.forEach(article => { %>
-              <a href="/articles/<%= article.id %>" class="card grid-card">
-                <div class="img-placeholder grid-card__img"><span>תמונת כתבה</span></div>
-                <div class="grid-card__body">
-                  <div class="meta">
-                    <span class="tag tag-soft"><%= article.category %></span>
-                    <span><%= article.date %></span>
-                  </div>
-                  <h3><%= article.title %></h3>
-                  <p><%= article.summary %></p>
-                  <div class="grid-card__footer">
-                    <span><%= article.reporter %></span>
-                    <span>· <%= article.views %> צפיות</span>
-                  </div>
+      <section>
+        <div class="section-title" <%= moreStories.length ? '' : 'hidden' %>>
+          <h2>עוד בחדשות</h2>
+          <span></span>
+        </div>
+        <div class="card-grid" id="feed-grid">
+          <% moreStories.forEach(article => { %>
+            <a href="/articles/<%= article.id %>" class="card grid-card" data-id="<%= article.id %>">
+              <div class="img-placeholder grid-card__img"><span>תמונת כתבה</span></div>
+              <div class="grid-card__body">
+                <div class="meta">
+                  <span class="tag tag-soft"><%= article.category %></span>
+                  <span><%= article.date %></span>
                 </div>
-              </a>
-            <% }) %>
-          </div>
-        </section>
-      <% } %>
-
-      <% if (hasMore) { %>
-        <a href="<%= feedLink({}) %>&page=<%= (Number(query.page) || 1) + 1 %>" class="load-more">כתבות נוספות</a>
-      <% } %>
+                <h3><%= article.title %></h3>
+                <p><%= article.summary %></p>
+                <div class="grid-card__footer">
+                  <span><%= article.reporter %></span>
+                  <span>· <%= article.views %> צפיות</span>
+                </div>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      </section>
+      <div class="refresh-sentinel" data-has-more="<%= hasMore %>" data-next-skip="<%= articles.length %>"></div>
+      <p class="feed-end" <%= (hasMore || !articles.length) ? 'hidden' : '' %>>זהו, ראית הכל ✓</p>
     </div>
 
     <aside class="sidebar">
