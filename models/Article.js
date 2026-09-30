@@ -63,4 +63,17 @@ const articleSchema = new mongoose.Schema(
 articleSchema.index({ author: 1, status: 1, updatedAt: -1 });
 articleSchema.index({ author: 1, updatedAt: -1 });
 
+//homepage related indexes
+articleSchema.index({'liveVersion.publishedAt': -1 ,_id:-1});//sort by date then id 
+articleSchema.index({'views': -1 ,_id:-1});//sort by views then id 
+
+//filtering by categories
+articleSchema.index({'liveVersion.category': 1, 'liveVersion.publishedAt': -1 ,_id:-1});//sort by date then id 
+articleSchema.index({'liveVersion.category': 1, views: -1 ,_id:-1});//sort by views then id 
+
+//search by title
+articleSchema.index({ 'liveVersion.title': 'text' }, { default_language: 'none' });
+
+
+
 module.exports = mongoose.model('Article', articleSchema);

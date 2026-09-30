@@ -1,5 +1,6 @@
 const weatherAPI= require('../services/weatherService');
-
+const {listPopular, listFeed}= require('../services/feedService');
+const {toFeedCard}=require('../presenters/feedArticlePresenter');
 const lat=32.07914764286493;
 const lon=34.76857077573147; //a certain place in tel aviv!
 
@@ -15,8 +16,16 @@ const callPromisesWeatherAPI= async (lat,lon)=>{
 
 const showHome= async (req, res,next) => {
   try{
-    const {weather,forecast} = await callPromisesWeatherAPI(lat,lon);
-    res.render('home', { query: req.query,weather,forecast });
+    const [weatherOutput,feed,popular]= await Promise.all([
+       callPromisesWeatherAPI(lat,lon),
+       listFeed({filters:req.filters,sort:req.sort,limit:20}),
+       listPopular(5)
+
+    ]);
+    const {weather,forecast}=weatherOutput;
+    const feedCards=feed.items.map(toFeedCard);
+    const popularCards=popular.map(toFeedCard);
+    res.render('home', { query: req.query,weather,forecast,popular:popularCards,articles:feedCards,hasMore:feed.hasMore });
   }
   catch(error){
     console.error(error);
