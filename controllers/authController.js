@@ -1,4 +1,5 @@
 const authService = require('../services/authService');
+const { recordUsageEvent } = require('../services/analyticsService');
 const { ROLES } = require('../models/User');
 
 function showLogin(req, res) {
@@ -23,6 +24,7 @@ async function login(req, res) {
   await new Promise((resolve, reject) => {
     req.session.save(error => error ? reject(error) : resolve());
   });
+  void recordUsageEvent({ type: 'login', source: 'auth', userId: user.id });
   res.redirect(user.role === ROLES.EDITOR ? '/editor' : '/reporter');
 }
 

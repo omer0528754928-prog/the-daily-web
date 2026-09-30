@@ -20,6 +20,9 @@
     "seed": "node scripts/seed.js",
     "seed:users": "node scripts/seedUsers.js",
     "test": "node --test \"tests/**/*.test.js\""
+    "monitor:users": "node scripts/checkActiveUsers.js",
+    "monitor:test-log": "node scripts/testOperationalLog.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
