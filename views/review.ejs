@@ -1,25 +1,24 @@
 <%
-  // Sample data from the design. When the route passes real data, it is used instead.
-  const article = locals.article || {
-    id: locals.id || 14,
-    title: 'עומסי הבוקר: המסלולים שהשתנו החודש',
-    reporter: 'דנה לוי',
-    category: 'חדשות',
-    updated: 'לפני 40 דקות',
-    status: 'ממתינה לאישור',
-    live: 'גרסה 3 · מפורסמת מ־10.09',
-    pending: 'גרסה 4',
-  };
-  const isUpdate = article.live !== '—';
-  const hasPending = article.pending !== '—';
-  // After the editor clicks a button, the route can pass result: 'approved' or 'returned'
-  const result = locals.result;
+  const article = locals.article;
+  const problems = locals.problems || [];
 %>
 <%- include('partials/head', { title: 'בדיקת כתבה' }) %>
 <%- include('partials/header', { active: 'editor' }) %>
 
 <main class="container container--form page">
-  <form method="post" class="card form-card">
+  <% if (locals.flash) { %>
+    <div class="alert alert-success"><%= flash %></div>
+  <% } %>
+  <% if (problems.length) { %>
+    <div class="alert alert-warning">
+      <p>יש לתקן:</p>
+      <ul>
+        <% problems.forEach(problem => { %><li><%= problem %></li><% }) %>
+      </ul>
+    </div>
+  <% } %>
+
+  <div class="card form-card">
     <div class="form-card__head">
       <div class="form-card__heading">
         <h1>בדיקת כתבה לאישור פרסום</h1>
@@ -29,48 +28,96 @@
     </div>
 
     <div class="form-card__body">
-      <h2 class="review__title"><%= article.title %></h2>
+      <h2 class="review__title"><%= article.working.title %></h2>
 
-      <% if (isUpdate) { %>
-        <div class="compare">
-          <div class="compare__col compare__col--live">
-            <div class="compare__label">מוצג לציבור כרגע</div>
-            <strong><%= article.live %></strong>
-            <p class="hint"><%= hasPending ? 'ממשיכה להיות מוצגת עד שהעדכון יאושר.' : 'זו הגרסה העדכנית המוצגת לציבור.' %></p>
-          </div>
-          <% if (hasPending) { %>
-            <div class="compare__col compare__col--pending">
-              <div class="compare__label">ממתין לאישור</div>
-              <strong><%= article.pending %></strong>
-              <p class="hint">עדכון של כתבה שפורסמה — עובר את אותו תהליך אישור.</p>
+      <% if (article.notes.length) { %>
+        <div class="notes">
+          <div class="notes__head">הערות עורך קודמות</div>
+          <% article.notes.forEach(note => { %>
+            <div class="note">
+              <span class="meta"><%= note.by %> · <%= note.time %></span>
+              <p><%= note.text %></p>
             </div>
-          <% } %>
+          <% }) %>
         </div>
       <% } %>
 
-      <label class="field">הערת עורך לכתב/ת
-        <textarea name="note" rows="4" placeholder="מה צריך לתקן? ההערה תוצג לכתב/ת באזור הכתב."></textarea>
-      </label>
+      <% if (article.isUpdate) { %>
+        <p class="hint">מה שהציבור רואה כרגע לעומת העדכון שממתין לאישור. אישור מחליף את הגרסה הציבורית; החזרה לתיקונים משאירה אותה ללא שינוי.</p>
+        <div class="compare">
+          <div class="compare__col compare__col--live">
+            <div class="compare__label">מוצג לציבור כרגע · גרסה <%= article.live.version %></div>
+            <strong><%= article.live.title %></strong>
+            <p class="meta">פורסמה <%= article.live.publishedAt %></p>
+            <% if (article.live.summary) { %><p class="article__summary"><%= article.live.summary %></p><% } %>
+            <p><%= article.live.body %></p>
+          </div>
+          <div class="compare__col compare__col--pending">
+            <div class="compare__label">ממתין לאישור · גרסה <%= article.working.version %></div>
+            <strong><%= article.working.title %></strong>
+            <p class="meta">עדכון של כתבה שפורסמה — עובר את אותו תהליך אישור.</p>
+            <% if (article.working.summary) { %><p class="article__summary"><%= article.working.summary %></p><% } %>
+            <p><%= article.working.body %></p>
+          </div>
+        </div>
+      <% } else { %>
+        <article>
+          <% if (article.working.summary) { %><p class="article__summary"><%= article.working.summary %></p><% } %>
+          <% if (article.working.image) { %><img src="<%= article.working.image %>" alt="" class="side-card__img"><% } %>
+          <p><%= article.working.body %></p>
+        </article>
+      <% } %>
 
-      <% if (result === 'approved') { %>
-        <div class="alert alert-success">הכתבה אושרה ופורסמה — הגרסה החדשה מוצגת כעת לציבור, והגרסה הקודמת נשמרה בהיסטוריית הגרסאות.</div>
-      <% } else if (result === 'returned') { %>
-        <div class="alert alert-warning">הכתבה הוחזרה לכתב/ת לתיקונים עם ההערה שנכתבה. עד לאישור מחדש, הגרסה שאושרה בעבר ממשיכה להיות מוצגת לציבור.</div>
+      <% if (article.isPending) { %>
+        <details class="details">
+          <summary class="btn btn-outline">עריכת התוכן על ידי העורך</summary>
+          <form action="/editor/articles/<%= article.id %>/edit" method="post" enctype="multipart/form-data" class="form-fields">
+            <label class="field">כותרת
+              <input type="text" name="title" value="<%= article.working.title %>" maxlength="200" required>
+            </label>
+            <label class="field">תקציר
+              <input type="text" name="summary" value="<%= article.working.summary %>" maxlength="500">
+            </label>
+            <label class="field">קטגוריה
+              <select name="category">
+                <% categories.forEach(category => { %>
+                  <option value="<%= category %>" <%= article.working.category === category ? 'selected' : '' %>><%= category %></option>
+                <% }) %>
+              </select>
+            </label>
+            <label class="field">תוכן
+              <textarea name="body" rows="8"><%= article.working.body %></textarea>
+            </label>
+            <label class="field">החלפת תמונה (אופציונלי)
+              <input type="file" name="image" accept="image/*">
+            </label>
+            <button type="submit" class="btn btn-primary">שמירת עריכה</button>
+          </form>
+        </details>
       <% } %>
     </div>
 
     <div class="form-card__foot">
-      <% if (hasPending) { %>
-        <div class="form-card__submit">
-          <button type="submit" formaction="/editor/articles/<%= article.id %>/approve" class="btn btn-success">אישור ופרסום</button>
-          <button type="submit" formaction="/editor/articles/<%= article.id %>/return" class="btn btn-warning">החזרה לתיקונים</button>
-        </div>
+      <% if (article.isPending) { %>
+        <form method="post" class="form-card__submit">
+          <label class="field">הערת עורך לכתב/ת <span class="meta">(חובה בעת החזרה לתיקונים)</span>
+            <textarea name="note" rows="3" placeholder="מה צריך לתקן? ההערה תוצג לכתב/ת באזור הכתב."></textarea>
+          </label>
+          <div>
+            <button type="submit" formaction="/editor/articles/<%= article.id %>/approve" class="btn btn-success">אישור ופרסום</button>
+            <button type="submit" formaction="/editor/articles/<%= article.id %>/return" class="btn btn-warning">החזרה לתיקונים</button>
+          </div>
+        </form>
       <% } else { %>
-        <span class="hint">אין גרסה שממתינה לאישור — הגרסה המפורסמת היא העדכנית.</span>
+        <span class="hint">אין גרסה שממתינה לאישור (הכתבה במצב «<%= article.status %>»).</span>
       <% } %>
+
+      <form action="/editor/articles/<%= article.id %>/delete" method="post" onsubmit="return confirm('למחוק את הכתבה? פעולה זו אינה הפיכה.');">
+        <button type="submit" class="btn btn-danger">מחיקה</button>
+      </form>
       <a href="/editor" class="btn btn-outline btn-push">חזרה לתור</a>
     </div>
-  </form>
+  </div>
 </main>
 
 <%- include('partials/footer') %>

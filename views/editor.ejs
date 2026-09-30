@@ -1,35 +1,28 @@
 <%
-  // Sample data from the design. When the route passes real data, it is used instead.
-  const queue = locals.queue || [
-    { id: 12, title: 'ראיון: מנהלת מרכז הצעירים על השנה הקרובה', reporter: 'דנה לוי', category: 'חדשות', updated: 'לפני שעה', status: 'ממתינה לאישור', live: '—', pending: 'גרסה 1' },
-    { id: 14, title: 'עומסי הבוקר: המסלולים שהשתנו החודש', reporter: 'דנה לוי', category: 'חדשות', updated: 'לפני 40 דקות', status: 'ממתינה לאישור', live: 'גרסה 3 · מפורסמת מ־10.09', pending: 'גרסה 4' },
-    { id: 21, title: 'עדכון: נתוני הריבית לאחר הודעת בנק ישראל', reporter: 'עומר שגב', category: 'כלכלה', updated: 'לפני 2 שעות', status: 'ממתינה לאישור', live: 'גרסה 2 · מפורסמת מ־12.09', pending: 'גרסה 3' },
-    { id: 22, title: 'סיכום מחזור 7 בליגה', reporter: 'רותם אבן', category: 'ספורט', updated: 'לפני 4 שעות', status: 'ממתינה לאישור', live: '—', pending: 'גרסה 1' },
-  ];
-  const compare = locals.compare || {
-    title: 'עומסי הבוקר: המסלולים שהשתנו החודש',
-    liveVersion: 3,
-    liveText: 'בעקבות עבודות התשתית שונו שני מסלולים בשכונה הצפונית. השינוי צפוי להישאר בתוקף עד סוף החודש.',
-    pendingVersion: 4,
-    pendingText: 'בעקבות עבודות התשתית שונו שלושה מסלולים בשכונה הצפונית, ונוספה תחנה זמנית ברחוב הראשי. השינוי יישאר בתוקף עד סוף הרבעון, בהתאם לעדכון שהתקבל הבוקר מאגף התחבורה.',
-  };
-
-  const query = locals.query || {};
-  const currentTab = query.status || 'ממתינה לאישור';
-  const tabs = ['ממתינה לאישור', 'בהכנה', 'הוחזרה לתיקונים', 'פורסמה', 'הכל'];
+  const queue = locals.queue || [];
+  const tabs = locals.tabs || [];
+  const activeStatus = locals.activeStatus || '';
+  const pager = locals.pager || { page: 1, total: queue.length, pageSize: queue.length || 1 };
+  const totalPages = Math.max(1, Math.ceil(pager.total / pager.pageSize));
+  const activeLabel = (tabs.find(t => t.key === activeStatus) || { label: 'הכל' }).label;
+  const statusHref = (key) => (key ? `/editor?status=${encodeURIComponent(key)}` : '/editor');
 %>
 <%- include('partials/head', { title: 'אזור העורך' }) %>
 <%- include('partials/header', { active: 'editor' }) %>
 
 <main class="container container--narrow page">
+  <% if (locals.flash) { %>
+    <div class="alert alert-success"><%= flash %></div>
+  <% } %>
+
   <div class="page-head">
     <div class="page-head__text">
       <h1>אזור העורך</h1>
-      <p><%= queue.length %> כתבות בתצוגה · מסונן לפי «<%= currentTab %>»</p>
+      <p><%= pager.total %> כתבות · מסונן לפי «<%= activeLabel %>»</p>
     </div>
     <nav class="tabs">
       <% tabs.forEach(tab => { %>
-        <a href="/editor?status=<%= encodeURIComponent(tab) %>" class="pill <%= currentTab === tab ? 'is-active' : '' %>"><%= tab %></a>
+        <a href="<%= statusHref(tab.key) %>" class="pill <%= activeStatus === tab.key ? 'is-active' : '' %>"><%= tab.label %></a>
       <% }) %>
     </nav>
   </div>
@@ -45,7 +38,7 @@
         <span class="status" data-status="<%= article.status %>"><%= article.status %></span>
         <div class="actions">
           <a href="/editor/articles/<%= article.id %>/review" class="btn btn-primary btn-sm">בדיקה ואישור</a>
-          <form action="/editor/articles/<%= article.id %>/delete" method="post">
+          <form action="/editor/articles/<%= article.id %>/delete" method="post" onsubmit="return confirm('למחוק את הכתבה «<%= article.title.replace(/'/g, "\\'") %>»? פעולה זו אינה הפיכה.');">
             <button type="submit" class="btn btn-danger btn-sm">מחיקה</button>
           </form>
         </div>
@@ -56,21 +49,22 @@
     <% } %>
   </div>
 
-  <section class="card panel">
-    <h2 class="panel__title">השוואת גרסאות · «<%= compare.title %>»</h2>
-    <p class="hint">מה שהציבור רואה כרגע לעומת העדכון שממתין לאישור.</p>
-    <div class="compare">
-      <div class="compare__col compare__col--live">
-        <div class="compare__label">מפורסם כרגע · גרסה <%= compare.liveVersion %></div>
-        <p><%= compare.liveText %></p>
-      </div>
-      <div class="compare__col compare__col--pending">
-        <div class="compare__label">ממתין לאישור · גרסה <%= compare.pendingVersion %></div>
-        <p><%= compare.pendingText %></p>
-      </div>
-    </div>
-    <p class="hint">הגרסה שמפורסמת כרגע ממשיכה להיות מוצגת לציבור עד לאישור העדכון. אישור מחליף את הגרסה הציבורית; החזרה לתיקונים משאירה אותה ללא שינוי.</p>
-  </section>
+  <% if (totalPages > 1) { %>
+    <% const base = activeStatus ? `status=${encodeURIComponent(activeStatus)}&` : ''; %>
+    <nav class="pager" aria-label="ניווט בין עמודים">
+      <% if (pager.page > 1) { %>
+        <a href="/editor?<%= base %>page=<%= pager.page - 1 %>" class="btn btn-outline btn-sm pager__step">הקודם <span aria-hidden="true">→</span></a>
+      <% } else { %>
+        <span class="btn btn-outline btn-sm pager__step is-disabled">הקודם <span aria-hidden="true">→</span></span>
+      <% } %>
+      <span class="pager__info">עמוד <%= pager.page %> מתוך <%= totalPages %></span>
+      <% if (pager.page < totalPages) { %>
+        <a href="/editor?<%= base %>page=<%= pager.page + 1 %>" class="btn btn-outline btn-sm pager__step"><span aria-hidden="true">←</span> הבא</a>
+      <% } else { %>
+        <span class="btn btn-outline btn-sm pager__step is-disabled"><span aria-hidden="true">←</span> הבא</span>
+      <% } %>
+    </nav>
+  <% } %>
 </main>
 
 <%- include('partials/footer') %>
