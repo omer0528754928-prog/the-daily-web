@@ -10,6 +10,7 @@ const MIN = 60 * 1000;
 const realFetch = global.fetch;
 const realNow = Date.now;
 const realConsoleError = console.error;
+const realConsoleWarn = console.warn;
 
 // fresh copy of the module = empty cache, nothing pending, never failed
 function loadService() {
@@ -76,6 +77,7 @@ for (const { name, call, temp } of targets) {
       now = realNow();
       Date.now = () => now;
       console.error = () => {}; // the service logs every failure, keep the test output clean
+      console.warn = () => {}; // and warns on timeouts
       fakeApi();
       service = loadService();
     });
@@ -84,6 +86,7 @@ for (const { name, call, temp } of targets) {
       Date.now = realNow;
       global.fetch = realFetch;
       console.error = realConsoleError;
+      console.warn = realConsoleWarn;
     });
 
     it('5. success with no old data -> returns the new data', async () => {
@@ -218,6 +221,7 @@ describe('getCurrentWeather fetchedAt', () => {
     now = realNow();
     Date.now = () => now;
     console.error = () => {};
+    console.warn = () => {};
     fakeApi();
     service = loadService();
   });
@@ -226,6 +230,7 @@ describe('getCurrentWeather fetchedAt', () => {
     Date.now = realNow;
     global.fetch = realFetch;
     console.error = realConsoleError;
+    console.warn = realConsoleWarn;
   });
 
   it('is the time of the API call', async () => {

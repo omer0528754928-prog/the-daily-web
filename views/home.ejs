@@ -1,12 +1,7 @@
 <%
   const articles = locals.articles || [];
-  const ticker = locals.ticker || [
-    'בנק ישראל: הריבית נותרה ללא שינוי',
-    'המועצה אישרה את תוכנית התחבורה הרב־שנתית',
-    'פסטיבל הקולנוע נפתח הערב עם שלושה בכורות',
-    'עדכון: שינויים בקווי האוטובוס מיום ראשון',
-  ];
-  const popular = locals.popular || articles.slice(0, 5);
+  const ticker = locals.ticker || [];
+  const popular = locals.popular || [];
   const weather = locals.weather || null;
   const forecast = locals.forecast || null;
   const hasMore = locals.hasMore ?? false;
@@ -16,6 +11,9 @@
   const view = query.view || 'all';
   const sorts = [{ value: 'date', label: 'תאריך' }, { value: 'popular', label: 'פופולריות' }];
   const views = [{ value: 'all', label: 'הכל' }, { value: 'unseen', label: 'לא נצפו' }, { value: 'seen', label: 'נצפו' }];
+  // TODO: seen/unseen is hidden until the team decides where views are tracked (ViewStat, Member 5).
+  // The pills don't filter anything yet: the server and feed.js ignore "view".
+  const showViewFilter = false;
   // Builds a feed link that keeps the current filters and changes only the given ones
   const feedLink = (changes) => {
     const params = new URLSearchParams({ ...query, ...changes });
@@ -39,7 +37,7 @@
     <div class="ticker__window">
       <div class="ticker__track">
         <% [...ticker, ...ticker].forEach(item => { %>
-          <span class="ticker__item"><%= item %></span>
+            <a href="/articles/<%= item.id %>" class="ticker__item"><%= item.title %></a>
         <% }) %>
       </div>
     </div>
@@ -67,12 +65,14 @@
         <a href="<%= feedLink({ sort: option.value }) %>" class="pill <%= sort === option.value ? 'is-active' : '' %>" data-sort="<%= option.value %>"><%= option.label %></a>
       <% }) %>
     </div>
-    <div class="filters__group">
-      <span class="filters__label">תצוגה</span>
-      <% views.forEach(option => { %>
-        <a href="<%= feedLink({ view: option.value }) %>" class="pill <%= view === option.value ? 'is-active' : '' %>"><%= option.label %></a>
-      <% }) %>
-    </div>
+    <% if (showViewFilter) { %>
+      <div class="filters__group">
+        <span class="filters__label">תצוגה</span>
+        <% views.forEach(option => { %>
+          <a href="<%= feedLink({ view: option.value }) %>" class="pill <%= view === option.value ? 'is-active' : '' %>"><%= option.label %></a>
+        <% }) %>
+      </div>
+    <% } %>
     <span class="filters__count" <%= query.q ? '' : 'hidden' %>>תוצאות עבור "<span class="search-term"><%= query.q %></span>"</span>
   </div>
 

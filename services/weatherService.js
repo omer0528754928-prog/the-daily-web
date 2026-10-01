@@ -1,6 +1,6 @@
 const CACHETIME=15*60*1000;
 const CRASHWAITTIME=60*1000;
-const FETCHTIMEOUT=1000; // give up on the API after 1 second
+const FETCHTIMEOUT=2500; // give up on the API after 2.5 seconds
 let cache=null;
 let forecastCache=null;
 let pendingWeather=null;
@@ -37,7 +37,12 @@ const getCurrentWeather = async (key,lat,lon) => {
         return output;
 
     } catch (error) {
-      console.error(error);
+      if (error.name === 'TimeoutError') {
+        console.warn('Weather API timed out, showing the last known weather');
+      } else {
+        console.error(error);
+      }
+
       weatherFailedAt=Date.now();
       return old;//we prefer to show data that is old than no data
     } finally {
@@ -98,7 +103,11 @@ const getForecast = async (key, lat, lon) => {
       forecastFailedAt = null;
       return forecast;
     } catch (error) {
-      console.error(error);
+      if (error.name === 'TimeoutError') {
+        console.warn('Weather API timed out, showing the last known weather');
+      } else {
+        console.error(error);
+      }
       forecastFailedAt = Date.now();
       return old;
     } finally {
