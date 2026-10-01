@@ -80,7 +80,7 @@
       <% if (lead) { %>
         <div class="top-stories">
           <a href="/articles/<%= lead.id %>" class="card lead" data-id="<%= lead.id %>">
-            <div class="img-placeholder lead__img"><span>תמונה ראשית · 1600×900</span></div>
+            <div class="img-placeholder lead__img"><span>תמונה ראשית</span></div>
             <div class="lead__body">
               <div class="meta">
                 <span class="tag"><%= lead.category %></span>
@@ -132,26 +132,30 @@
             </a>
           <% }) %>
         </div>
-        <template id=""grid-card-template">
-            <a   class="card grid-card" data-field="id">
-              <div class="img-placeholder grid-card__img"><span>תמונת כתבה</span></div>
-              <div class="grid-card__body">
-                <div class="meta">
-                  <span class="tag tag-soft" data-field="category"></span>
-                  <span data-field="date"></span>
-                </div>
-                <h3><%= article.title %></h3>
-                <p><%= article.summary %></p>
-                <div class="grid-card__footer">
-                  <span><%= article.reporter %></span>
-                  <span>· <%= article.views %> צפיות</span>
-                </div>
+        <%# An empty grid card for feed.js to clone and fill (must match the cards above) %>
+        <template id="grid-card-template">
+          <a class="card grid-card">
+            <div class="img-placeholder grid-card__img"><span>תמונת כתבה</span></div>
+            <div class="grid-card__body">
+              <div class="meta">
+                <span class="tag tag-soft" data-field="category"></span>
+                <span data-field="date"></span>
               </div>
-            </a>      
-        
+              <h3 data-field="title"></h3>
+              <p data-field="summary"></p>
+              <div class="grid-card__footer">
+                <span data-field="reporter"></span>
+                <span>· <span data-field="views"></span> צפיות</span>
+              </div>
+            </div>
+          </a>
         </template>
       </section>
       <div class="refresh-sentinel" data-has-more="<%= hasMore %>" data-next-skip="<%= articles.length %>"></div>
+      <div class="feed-error" hidden>
+        <span>לא הצלחנו לטעון כתבות נוספות.</span>
+        <button type="button" class="btn btn-outline btn-sm retry-button">נסה שוב</button>
+      </div>
       <p class="feed-end" <%= (hasMore || !articles.length) ? 'hidden' : '' %>>זהו, ראית הכל ✓</p>
     </div>
 

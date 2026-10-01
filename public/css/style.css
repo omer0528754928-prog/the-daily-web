@@ -578,6 +578,28 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
 }
 .load-more:hover { border-color: var(--primary); text-decoration: none; }
 
+/* Messages under the feed: end of the feed, and a failed batch with a retry button */
+.feed-end,
+.feed-error {
+  margin-top: 24px;
+  padding: 18px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.feed-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px dashed #ccd5e2;
+  border-radius: 12px;
+}
+/* display:flex above would otherwise beat the browser's [hidden] rule */
+.feed-error[hidden] { display: none; }
+
 
 /* 7. Sidebar widgets
    ========================================================================== */
