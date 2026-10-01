@@ -22,9 +22,12 @@
     return `/?${params}`;
   };
 
-  const lead = articles[0];
-  const sideStories = articles.slice(1, 4);
-  const moreStories = articles.slice(4);
+  // The lead + side cards layout is only for the plain home page. A filtered view (category, search
+  // or sort) is a plain grid, the same layout feed.js builds after an Ajax filter change.
+  const isFiltered = Boolean(query.category || query.q || query.sort);
+  const lead = isFiltered ? null : articles[0];
+  const sideStories = isFiltered ? [] : articles.slice(1, 4);
+  const moreStories = isFiltered ? articles : articles.slice(4);
 %>
 <%- include('partials/head', { title: 'פיד הבית' }) %>
 <%- include('partials/header', { active: 'feed' }) %>
@@ -61,7 +64,7 @@
     <div class="filters__group">
       <span class="filters__label">מיון</span>
       <% sorts.forEach(option => { %>
-        <a href="<%= feedLink({ sort: option.value }) %>" class="pill <%= sort === option.value ? 'is-active' : '' %>"><%= option.label %></a>
+        <a href="<%= feedLink({ sort: option.value }) %>" class="pill <%= sort === option.value ? 'is-active' : '' %>" data-sort="<%= option.value %>"><%= option.label %></a>
       <% }) %>
     </div>
     <div class="filters__group">
@@ -70,9 +73,7 @@
         <a href="<%= feedLink({ view: option.value }) %>" class="pill <%= view === option.value ? 'is-active' : '' %>"><%= option.label %></a>
       <% }) %>
     </div>
-    <% if (query.q) { %>
-      <span class="filters__count">תוצאות עבור "<%= query.q %>"</span>
-    <% } %>
+    <span class="filters__count" <%= query.q ? '' : 'hidden' %>>תוצאות עבור "<span class="search-term"><%= query.q %></span>"</span>
   </div>
 
   <div class="with-sidebar">
@@ -80,7 +81,7 @@
       <% if (lead) { %>
         <div class="top-stories">
           <a href="/articles/<%= lead.id %>" class="card lead" data-id="<%= lead.id %>">
-            <div class="img-placeholder lead__img"><span>תמונה ראשית</span></div>
+            <img src="<%= lead.image %>" alt="" class="card-img lead__img">
             <div class="lead__body">
               <div class="meta">
                 <span class="tag"><%= lead.category %></span>
@@ -90,11 +91,10 @@
               <p class="lead__summary"><%= lead.summary %></p>
             </div>
           </a>
-
           <div class="side-stories">
             <% sideStories.forEach(article => { %>
               <a href="/articles/<%= article.id %>" class="card side-card" data-id="<%= article.id %>">
-                <div class="img-placeholder side-card__img"></div>
+                <img src="<%= article.image %>" alt="" class="card-img side-card__img">
                 <div class="side-card__body">
                   <span class="category-label"><%= article.category %></span>
                   <h3><%= article.title %></h3>
@@ -104,19 +104,18 @@
             <% }) %>
           </div>
         </div>
-      <% } else { %>
-        <p class="empty">לא נמצאו כתבות.</p>
       <% } %>
+      <p class="empty feed-empty" <%= articles.length ? 'hidden' : '' %>>לא נמצאו כתבות.</p>
 
       <section>
-        <div class="section-title" <%= moreStories.length ? '' : 'hidden' %>>
+        <div class="section-title" <%= moreStories.length && !isFiltered ? '' : 'hidden' %>>
           <h2>עוד בחדשות</h2>
           <span></span>
         </div>
         <div class="card-grid" id="feed-grid">
           <% moreStories.forEach(article => { %>
             <a href="/articles/<%= article.id %>" class="card grid-card" data-id="<%= article.id %>">
-              <div class="img-placeholder grid-card__img"><span>תמונת כתבה</span></div>
+              <img src="<%= article.image %>" alt="" class="card-img grid-card__img">
               <div class="grid-card__body">
                 <div class="meta">
                   <span class="tag tag-soft"><%= article.category %></span>
@@ -135,7 +134,7 @@
         <%# An empty grid card for feed.js to clone and fill (must match the cards above) %>
         <template id="grid-card-template">
           <a class="card grid-card">
-            <div class="img-placeholder grid-card__img"><span>תמונת כתבה</span></div>
+            <img alt="" class="card-img grid-card__img" data-field="image">
             <div class="grid-card__body">
               <div class="meta">
                 <span class="tag tag-soft" data-field="category"></span>
