@@ -9,6 +9,17 @@
     { key: 'editor', href: '/editor', label: 'אזור עורך' },
     { key: 'stats', href: '/stats', label: 'סטטיסטיקות' },
   ];
+  // Category link that keeps the search and sort when used on the home page (so it works without JS too).
+  // Other pages' query strings mean something else (e.g. the reporter's table filters), so they aren't carried over.
+  const categoryLink = (category) => {
+    const params = new URLSearchParams();
+    if (category) params.set('category', category);
+    if (active === 'feed') {
+      if (query.q) params.set('q', query.q);
+      if (query.sort) params.set('sort', query.sort);
+    }
+    return params.toString() ? `/?${params}` : '/';
+  };
 %>
 <div class="topbar">
   <a href="/" class="topbar__brand">
@@ -64,9 +75,9 @@
 <header class="site-header">
   <div class="container site-header__inner">
     <nav class="cat-nav">
-      <a href="/" class="cat-nav__link <%= currentCategory === 'הכל' ? 'is-active' : '' %>" data-category="">הכל</a>
+      <a href="<%= categoryLink('') %>" class="cat-nav__link <%= currentCategory === 'הכל' ? 'is-active' : '' %>" data-category="">הכל</a>
       <% categories.forEach(category => { %>
-        <a href="/?category=<%= encodeURIComponent(category) %>" class="cat-nav__link <%= currentCategory === category ? 'is-active' : '' %>" data-category="<%= category %>"><%= category %></a>
+        <a href="<%= categoryLink(category) %>" class="cat-nav__link <%= currentCategory === category ? 'is-active' : '' %>" data-category="<%= category %>"><%= category %></a>
       <% }) %>
     </nav>
     <form action="/" method="get" class="search">
