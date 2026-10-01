@@ -28,6 +28,7 @@
 %>
 <%- include('partials/head', { title: 'פיד הבית' }) %>
 <%- include('partials/header', { active: 'feed' }) %>
+<script src="/js/feed.js" defer></script>
 <script src="/js/weather.js" defer></script>
 <main class="container page">
   <div class="ticker">
@@ -131,6 +132,24 @@
             </a>
           <% }) %>
         </div>
+        <template id=""grid-card-template">
+            <a   class="card grid-card" data-field="id">
+              <div class="img-placeholder grid-card__img"><span>תמונת כתבה</span></div>
+              <div class="grid-card__body">
+                <div class="meta">
+                  <span class="tag tag-soft" data-field="category"></span>
+                  <span data-field="date"></span>
+                </div>
+                <h3><%= article.title %></h3>
+                <p><%= article.summary %></p>
+                <div class="grid-card__footer">
+                  <span><%= article.reporter %></span>
+                  <span>· <%= article.views %> צפיות</span>
+                </div>
+              </div>
+            </a>      
+        
+        </template>
       </section>
       <div class="refresh-sentinel" data-has-more="<%= hasMore %>" data-next-skip="<%= articles.length %>"></div>
       <p class="feed-end" <%= (hasMore || !articles.length) ? 'hidden' : '' %>>זהו, ראית הכל ✓</p>
