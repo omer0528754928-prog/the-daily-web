@@ -1,0 +1,15 @@
+<%- include('partials/head', { title: 'אין הרשאה' }) %>
+<%- include('partials/header', { active: '' }) %>
+
+<main class="container page">
+  <section class="card panel" style="text-align: center; padding: 72px 24px;">
+    <h1 style="font-size: clamp(1.8rem, 5vw, 2.6rem); margin: 0 0 14px;">שים לב, אין לך הרשאות למסך זה.</h1>
+    <p class="hint" style="font-size: 1.05rem;">אפשר לחזור לעמוד הבית או לעבור לאזור המתאים להרשאות שלך.</p>
+    <div style="margin-top: 22px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+      <a href="/" class="btn btn-primary">לעמוד הבית</a>
+      <a href="/reporter" class="btn btn-outline">אזור כתב</a>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>

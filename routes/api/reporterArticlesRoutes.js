@@ -10,7 +10,7 @@ const reporterArticlesController = require('../../controllers/api/reporterArticl
 
 const router = express.Router();
 
-router.use(requireRole(ROLES.REPORTER));
+router.use(requireRole(ROLES.REPORTER, ROLES.EDITOR));
 
 router.get('/', articleFilters, pagination, reporterArticlesController.listMyArticles);
 router.post('/', parseForm, reporterArticlesController.createArticle);

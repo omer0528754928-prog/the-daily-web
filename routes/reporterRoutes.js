@@ -10,7 +10,7 @@ const reporterController = require('../controllers/reporterController');
 
 const router = express.Router();
 
-router.use(requireRole(ROLES.REPORTER));
+router.use(requireRole(ROLES.REPORTER, ROLES.EDITOR));
 
 router.get('/', articleFilters, paginationByPage(10), reporterController.showDashboard);
 

@@ -18,9 +18,13 @@
     "start": "node app.js",
     "dev": "node --watch app.js",
     "seed": "node scripts/seed.js",
+    "seed:users": "node scripts/seedUsers.js",
+    "monitor:users": "node scripts/checkActiveUsers.js",
+    "monitor:test-log": "node scripts/testOperationalLog.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "connect-mongo": "^6.0.0",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
