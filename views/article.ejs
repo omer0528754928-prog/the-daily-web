@@ -39,15 +39,15 @@
         <% }) %>
       </div>
 
-      <section class="comments" id="comments">
-        <h2>תגובות (<%= commentCount %>)</h2>
+      <section class="comments" id="comments" data-article-id="<%= article.id %>">
+        <h2>תגובות (<span data-comment-count><%= commentCount %></span>)</h2>
         <form action="/articles/<%= article.id %>/comments" method="post" class="comment-form">
           <div class="comment-form__row">
             <input type="text" name="name" placeholder="שם (אורח)" maxlength="<%= commentLimits.authorName %>" value="<%= commentForm.name || '' %>">
             <span class="hint">עד 3 תגובות בדקה מאותו מכשיר</span>
           </div>
           <textarea name="text" placeholder="כתבו תגובה…" maxlength="<%= commentLimits.text %>" required><%= commentForm.text || '' %></textarea>
-          <div class="comment-form__row">
+          <div class="comment-form__row" data-comment-status>
             <button type="submit" class="btn btn-primary">פרסום תגובה</button>
             <% if (locals.rateLimited) { %>
               <span class="alert alert-error">חרגת מהמגבלה — נסו שוב בעוד דקה</span>
@@ -60,7 +60,7 @@
         <% if (comments.length) { %>
           <div class="comment-list">
             <% comments.forEach(comment => { %>
-              <article class="comment">
+              <article class="comment" data-comment-id="<%= comment.id %>">
                 <span class="avatar"></span>
                 <div>
                   <div class="comment__head">
@@ -73,10 +73,10 @@
             <% }) %>
           </div>
           <% if (commentCount > comments.length) { %>
-            <p class="hint">מוצגות <%= comments.length %> התגובות האחרונות מתוך <%= commentCount %></p>
+            <p class="hint" data-comment-more>מוצגות <%= comments.length %> התגובות האחרונות מתוך <%= commentCount %></p>
           <% } %>
         <% } else { %>
-          <p class="hint">עדיין אין תגובות לכתבה הזו. אפשר להיות הראשונים להגיב.</p>
+          <p class="hint" data-comment-empty>עדיין אין תגובות לכתבה הזו. אפשר להיות הראשונים להגיב.</p>
         <% } %>
       </section>
     </article>
@@ -111,4 +111,5 @@
   </div>
 </main>
 
+<script src="/js/comments.js" defer></script>
 <%- include('partials/footer') %>
