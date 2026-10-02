@@ -10,6 +10,7 @@ const loadSessionUser = require('./middleware/loadSessionUser');
 const authRoutes = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const reporterRoutes = require('./routes/reporterRoutes');
+const articleRoutes = require('./routes/articleRoutes');
 const editorRoutes = require('./routes/editorRoutes');
 const apiRoutes = require('./routes/api');
 
@@ -45,11 +46,13 @@ app.use('/api', apiRoutes);
 
 // Pages (HTML)
 app.use('/reporter', reporterRoutes);
+app.use('/articles', articleRoutes);
+
 app.use('/editor', editorRoutes);
 
 // Pages (for now they show the design's sample data)
 app.get('/', (req, res) => res.render('home', { query: req.query }));
-app.get('/articles/:id', (req, res) => res.render('article', { id: req.params.id }));
+
 app.get('/stats', (req, res) => res.render('stats', { query: req.query }));
 
 app.use(notFound);
