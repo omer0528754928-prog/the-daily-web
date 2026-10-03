@@ -10,6 +10,8 @@ const loadSessionUser = require('./middleware/loadSessionUser');
 const authRoutes = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const reporterRoutes = require('./routes/reporterRoutes');
+const articleRoutes = require('./routes/articleRoutes');
+const editorRoutes = require('./routes/editorRoutes');
 const apiRoutes = require('./routes/api');
 const homePageRoutes = require('./routes/homePageRoutes');
 
@@ -36,7 +38,6 @@ app.use(session({
 }));
 app.use(loadSessionUser);
 
-
 app.locals.categories = CATEGORIES;
 
 app.use(authRoutes);
@@ -46,12 +47,12 @@ app.use('/api', apiRoutes);
 
 // Pages (HTML)
 app.use('/reporter', reporterRoutes);
+app.use('/articles', articleRoutes);
+
+app.use('/editor', editorRoutes);
 
 app.use('/', homePageRoutes);
 // Pages (for now they show the design's sample data)
-app.get('/articles/:id', (req, res) => res.render('article', { id: req.params.id }));
-app.get('/editor', (req, res) => res.render('editor', { query: req.query }));
-app.get('/editor/articles/:id/review', (req, res) => res.render('review', { id: req.params.id }));
 app.get('/stats', (req, res) => res.render('stats', { query: req.query }));
 
 app.use(notFound);
