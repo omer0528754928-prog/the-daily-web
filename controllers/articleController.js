@@ -1,5 +1,6 @@
 const publicArticleService = require('../services/publicArticleService');
 const commentService = require('../services/commentService');
+const weatherService = require('../services/weatherService');
 const { toPublicArticle, toRelatedItem } = require('../presenters/publicArticlePresenter');
 const { toPublicComment, toCommentProblems, toCommentForm } = require('../presenters/commentPresenter');
 const { LIMITS: COMMENT_LIMITS } = require('../validators/commentValidator');
@@ -12,13 +13,15 @@ const COMMENTS_PER_PAGE = 20;
 async function renderArticlePage(req, res, { status = 200, commentForm = {}, commentErrors = [] } = {}) {
   const { article } = req;
 
-  const [related, comments] = await Promise.all([
+  const [related, comments, { weather }] = await Promise.all([
     publicArticleService.findRelated(article.liveVersion.category, article._id),
     commentService.listForArticle(article._id, { limit: COMMENTS_PER_PAGE }),
+    weatherService.getLocalWeather({ withForecast: false }), // never throws: null when unavailable
   ]);
 
   res.status(status).render('article', {
     article: toPublicArticle(article),
+    weather,
     related: related.map(toRelatedItem),
     comments: comments.items.map(toPublicComment),
     commentCount: comments.total,

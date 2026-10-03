@@ -5,8 +5,8 @@
   // After a comment that did not pass validation: what the guest typed, and what to fix
   const commentForm = locals.commentForm || {};
   const commentErrors = locals.commentErrors || [];
-  // Sample data until the weather widget (Member 2) is connected
-  const weather = locals.weather || { city: 'תל אביב', temp: '27°' };
+  // null when the weather API is unavailable - the widget says so
+  const weather = locals.weather || null;
 %>
 <%- include('partials/head', { title: article.title }) %>
 <%- include('partials/header') %>
@@ -82,15 +82,7 @@
     </article>
 
     <aside class="sidebar">
-      <section class="widget weather weather--compact">
-        <div class="weather__main">
-          <div>
-            <div class="weather__city">מזג אוויר · <%= weather.city %></div>
-            <div class="weather__temp"><%= weather.temp %></div>
-          </div>
-          <div class="weather__sun"></div>
-        </div>
-      </section>
+      <%- include('partials/weatherWidgetSmall', { weather }) %>
 
       <section class="widget">
         <h3 class="widget__title">כתבות נוספות בקטגוריה</h3>
@@ -112,4 +104,5 @@
 </main>
 
 <script src="/js/comments.js" defer></script>
+<script src="/js/weather.js" defer></script>
 <%- include('partials/footer') %>

@@ -1,0 +1,11 @@
+const express = require('express');
+const feedFilters=require('../middleware/feedFilters')
+const homePageController = require('../controllers/homePageController');
+
+const router = express.Router();
+
+router.get('/',feedFilters, homePageController.showHome);
+router.get('/weather-widget', homePageController.weatherWidget);
+router.get('/weather-widget/small', homePageController.weatherWidgetSmall);
+
+module.exports = router;

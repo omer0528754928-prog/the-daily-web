@@ -1,0 +1,21 @@
+<section class="widget weather weather--compact" data-refresh-url="/weather-widget/small"<% if (weather) { %> data-fetched-at="<%= weather.fetchedAt %>"<% } %>>
+        <% if (weather) { %>
+          <div class="weather__main">
+            <div>
+              <div class="weather__city">מזג אוויר · <%= weather.city %></div>
+              <div class="weather__temp"><%= weather.temp %></div>
+              <div class="weather__desc"><%= weather.condition[1] %></div>
+            </div>
+            <img class="weather__icon" src="https://openweathermap.org/img/wn/<%= weather.icon %>@2x.png" alt="<%= weather.condition[1] %>">
+          </div>
+        <% } else { %>
+          <div class="weather__main">
+            <div>
+              <div class="weather__city">מזג אוויר</div>
+              <div class="weather__desc">מזג האוויר אינו זמין כרגע</div>
+            </div>
+          </div>
+        <% } %>
+
+        <div class="weather__source">מתעדכן מ־OpenWeatherMap<% if (weather) { %> · עודכן ב־<%= new Date(weather.fetchedAt).toLocaleTimeString('he-IL', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit' }) %><% } %></div>
+      </section>

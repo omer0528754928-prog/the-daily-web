@@ -1,0 +1,5 @@
+{
+  "watch": ["app.js", "config", "controllers", "middleware", "models", "presenters", "routes", "services", "utils", "validators", "views", ".env"],
+  "ext": "js,json,ejs,env",
+  "ignore": ["public/", "node_modules/", "articlesDB/"]
+}
