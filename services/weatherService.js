@@ -1,4 +1,4 @@
-const CACHETIME=15*60*1000;
+const CACHETIME=14.5*60*1000; // keep it under 15 minutes
 const CRASHWAITTIME=60*1000;
 const FETCHTIMEOUT=2500; // give up on the API after 2.5 seconds
 let cache=null;
@@ -14,9 +14,9 @@ const getCurrentWeather = async (key,lat,lon) => {
 
   if(old && Date.now()-cache.fetchedAt <= CACHETIME)
     return old;
-  // the API failed recently - don't hit it again yet, show the old data (or nothing)
+  // the API failed recently - don't hit it again yet. old data is expired here, so show nothing
   if(weatherFailedAt && Date.now()-weatherFailedAt < CRASHWAITTIME)
-    return old;
+    return null;
   if(pendingWeather)
     return pendingWeather;
 
@@ -38,13 +38,13 @@ const getCurrentWeather = async (key,lat,lon) => {
 
     } catch (error) {
       if (error.name === 'TimeoutError') {
-        console.warn('Weather API timed out, showing the last known weather');
+        console.warn('Weather API timed out');
       } else {
         console.error(error);
       }
 
       weatherFailedAt=Date.now();
-      return old;//we prefer to show data that is old than no data
+      return null;//expired data is not shown - the widget says the weather is unavailable
     } finally {
       pendingWeather=null;
     }
@@ -59,9 +59,9 @@ const getForecast = async (key, lat, lon) => {
   if (old && Date.now() - forecastCache.fetchedAt <= CACHETIME) {
     return old;
   }
-  // the API failed recently - don't hit it again yet
+  // the API failed recently - don't hit it again yet. old data is expired here, so show nothing
   if (forecastFailedAt && Date.now() - forecastFailedAt < CRASHWAITTIME) {
-    return old;
+    return null;
   }
 
   if (pendingForecast) {
@@ -104,12 +104,12 @@ const getForecast = async (key, lat, lon) => {
       return forecast;
     } catch (error) {
       if (error.name === 'TimeoutError') {
-        console.warn('Weather API timed out, showing the last known weather');
+        console.warn('Weather API timed out');
       } else {
         console.error(error);
       }
       forecastFailedAt = Date.now();
-      return old;
+      return null; // expired data is not shown
     } finally {
       pendingForecast = null;
     }
@@ -118,4 +118,21 @@ const getForecast = async (key, lat, lon) => {
   return pendingForecast;
 };
 
-module.exports={getCurrentWeather,getForecast};
+const LAT=32.07914764286493;
+const LON=34.76857077573147; //a certain place in tel aviv!
+
+// The site's weather: the current weather, plus the forecast unless withForecast is false.
+// No API key -> nothing, the widgets say the weather is unavailable
+const getLocalWeather = async ({withForecast=true}={}) => {
+  const key = process.env.WEATHER_API_KEY;
+  if(!key)
+    return {weather:null, forecast:null};
+
+  const [weather, forecast] = await Promise.all([
+    getCurrentWeather(key, LAT, LON),
+    withForecast ? getForecast(key, LAT, LON) : null,
+  ]);
+  return {weather,forecast};
+};
+
+module.exports={getCurrentWeather,getForecast,getLocalWeather};

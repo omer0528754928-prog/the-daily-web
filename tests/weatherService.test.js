@@ -94,7 +94,7 @@ for (const { name, call, temp } of targets) {
       assert.strictEqual(api.calls, 1);
     });
 
-    it('A. fresh cache (under 15 min) -> returned without calling the API', async () => {
+    it('A. fresh cache (under 14.5 min) -> returned without calling the API', async () => {
       await call(service);
       advance(14 * MIN);
       assert.strictEqual(temp(await call(service)), '20°');
@@ -125,11 +125,19 @@ for (const { name, call, temp } of targets) {
       assert.strictEqual(await call(service), null);
     });
 
-    it('3. failure with old data -> old data', async () => {
+    it('A2. cache expires after 14.5 min (under 15) -> the API is called again', async () => {
+      await call(service);
+      advance(14.5 * MIN + 1);
+      api.temp = 25;
+      assert.strictEqual(temp(await call(service)), '25°');
+      assert.strictEqual(api.calls, 2);
+    });
+
+    it('3. failure with expired old data -> null, the old data is not shown', async () => {
       await call(service);
       advance(16 * MIN);
       api.mode = 'fail';
-      assert.strictEqual(temp(await call(service)), '20°');
+      assert.strictEqual(await call(service), null);
       assert.strictEqual(api.calls, 2);
     });
 
@@ -142,7 +150,7 @@ for (const { name, call, temp } of targets) {
       assert.strictEqual(api.calls, 1);
     });
 
-    it('B. inside the 1 min wait after a failure -> no API call (old data: old data)', async () => {
+    it('B. inside the 1 min wait after a failure -> no API call (expired old data: still null)', async () => {
       await call(service);
       advance(16 * MIN);
       api.mode = 'fail';
@@ -150,7 +158,7 @@ for (const { name, call, temp } of targets) {
       advance(30 * 1000);
       api.mode = 'ok';
       api.temp = 25;
-      assert.strictEqual(temp(await call(service)), '20°');
+      assert.strictEqual(await call(service), null);
       assert.strictEqual(api.calls, 2);
     });
 
@@ -171,7 +179,11 @@ for (const { name, call, temp } of targets) {
       await call(service);                 // recovered
       advance(16 * MIN);
       api.mode = 'fail';
-      assert.strictEqual(temp(await call(service)), '20°'); // new failure -> old data
+      assert.strictEqual(await call(service), null); // new failure -> nothing (old data expired)
+      assert.strictEqual(api.calls, 3);
+      advance(30 * 1000);
+      api.mode = 'ok';
+      assert.strictEqual(await call(service), null); // the new 1 min wait applies
       assert.strictEqual(api.calls, 3);
     });
 
@@ -213,7 +225,7 @@ for (const { name, call, temp } of targets) {
 
 
 // fetchedAt tells the widget when the data was really fetched ("updated at HH:MM"),
-// so it must stay the time of the last successful API call - also when old data is returned.
+// so it must stay the time of the last successful API call.
 describe('getCurrentWeather fetchedAt', () => {
   let service;
 
@@ -249,19 +261,10 @@ describe('getCurrentWeather fetchedAt', () => {
 
   it('moves to the new call time after the cache expires', async () => {
     const first = await service.getCurrentWeather('key', 1, 2);
-    advance(15 * MIN + 1);
+    advance(14.5 * MIN + 1);
     const second = await service.getCurrentWeather('key', 1, 2);
     assert.strictEqual(second.fetchedAt, now);
     assert.notStrictEqual(second.fetchedAt, first.fetchedAt);
-    assert.strictEqual(api.calls, 2);
-  });
-
-  it('keeps the old time when the API fails and old data is returned', async () => {
-    const first = await service.getCurrentWeather('key', 1, 2);
-    advance(16 * MIN);
-    api.mode = 'fail';
-    const second = await service.getCurrentWeather('key', 1, 2);
-    assert.strictEqual(second.fetchedAt, first.fetchedAt);
     assert.strictEqual(api.calls, 2);
   });
 });

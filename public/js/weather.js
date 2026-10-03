@@ -1,29 +1,47 @@
-const REFRESH_MS = 15 * 60 * 1000; // the server caches the weather for 15 minutes
-const MARGIN_MS = 5 * 1000;        // refresh a bit after the server cache expires, not right on it
-const MIN_DELAY_MS = 60 * 1000;    // never refresh more than once a minute (API down / no data)
+const REFRESH_MS = 14.5 * 60 * 1000; // the server caches the weather for 14.5 minutes
+const MARGIN_MS = 5 * 1000;          // refresh a bit after the server cache expires, not right on it
+const MIN_DELAY_MS = 60 * 1000;      // never refresh more than once a minute (API down / no data)
+// same as the "no weather" state of views/partials/weatherWidgetBig.ejs and weatherWidgetSmall.ejs
+const UNAVAILABLE_INNER_HTML = '<div class="weather__main"><div>'
+    + '<div class="weather__city">מזג אוויר</div><div class="weather__desc">מזג האוויר אינו זמין כרגע</div>'
+    + '</div></div><div class="weather__source">מתעדכן מ־OpenWeatherMap</div>';
 let timerID = null;
 let refreshing = false;
 
-// Fetches the widget HTML from the server and swaps it in. On any failure the old widget stays.
+// When the shown weather is past the server cache time it must not stay on the page
+const isExpired = (fetchedAt) => Date.now() >= fetchedAt + REFRESH_MS;
+
+// The big widget (home page) refreshes from /weather-widget, the small one says where on data-refresh-url
+const refreshUrlOf = (widget) => widget.dataset.refreshUrl || '/weather-widget';
+
+// "Unavailable" in the same kind of widget (same class and refresh url), without data-fetched-at
+const unavailableHtml = (widget) => {
+    const refreshUrl = widget.dataset.refreshUrl ? ` data-refresh-url="${widget.dataset.refreshUrl}"` : '';
+    return `<section class="${widget.className}"${refreshUrl}>${UNAVAILABLE_INNER_HTML}</section>`;
+};
+
+// Fetches the widget HTML from the server and swaps it in.
+// On a failure the old widget stays only while its data is still fresh, otherwise it says "unavailable".
 const refreshWeather = async () => {
     if (document.hidden) {
         return;
     }
+    const widget = document.querySelector('.widget.weather');
+    if (!widget) {
+        return;
+    }
     try {
-        const widget = document.querySelector('.widget.weather');
-        if (!widget) {
+        const res = await fetch(refreshUrlOf(widget));
+        if (res.ok) {
+            widget.outerHTML = await res.text();
             return;
         }
-
-        const res = await fetch('/weather-widget');
-        if (!res.ok) {
-            console.warn(`HTTP ERROR ${res.status}`);
-            return;
-        }
-
-        widget.outerHTML = await res.text();
+        console.warn(`HTTP ERROR ${res.status}`);
     } catch (error) {
         console.error(error);
+    }
+    if (isExpired(Number(widget.dataset.fetchedAt))) {
+        widget.outerHTML = unavailableHtml(widget);
     }
 };
 
@@ -72,7 +90,7 @@ document.addEventListener('visibilitychange', () => {
         return;
     }
     const fetchedAt = getFetchedAt();
-    if (Number.isNaN(fetchedAt) || Date.now() >= fetchedAt + REFRESH_MS) {
+    if (Number.isNaN(fetchedAt) || isExpired(fetchedAt)) {
         refreshReschedule();
     } else {
         scheduleNext();

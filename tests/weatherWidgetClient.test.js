@@ -14,9 +14,15 @@ const SEC = 1000;
 const MIN = 60 * SEC;
 
 // the widget HTML the server renders; fetchedAt = null -> no data-fetched-at (the page had no weather)
-const widgetHtml = (fetchedAt) => fetchedAt == null
+const bigWidgetHtml = (fetchedAt) => fetchedAt == null
   ? '<section class="widget weather">no weather</section>'
   : `<section class="widget weather" data-fetched-at="${fetchedAt}">weather</section>`;
+// the small widget (article page) also says where it refreshes from
+const smallWidgetHtml = (fetchedAt) => fetchedAt == null
+  ? '<section class="widget weather weather--compact" data-refresh-url="/weather-widget/small">no weather</section>'
+  : `<section class="widget weather weather--compact" data-refresh-url="/weather-widget/small" data-fetched-at="${fetchedAt}">weather</section>`;
+// the kind of widget on the open page (and what the fake server sends back), set by openPage()
+let widgetHtml = bigWidgetHtml;
 
 // ---- fake clock ----
 let clock;
@@ -59,8 +65,10 @@ async function passTime(ms) {
 let widget;
 let page;
 function makeWidget(html) {
-  const match = html.match(/data-fetched-at="(\d+)"/);
-  const w = { dataset: match ? { fetchedAt: match[1] } : {} };
+  const attr = (name) => html.match(new RegExp(`${name}="([^"]*)"`))?.[1];
+  const w = { className: attr('class'), dataset: {} };
+  if (attr('data-fetched-at')) w.dataset.fetchedAt = attr('data-fetched-at');
+  if (attr('data-refresh-url')) w.dataset.refreshUrl = attr('data-refresh-url');
   Object.defineProperty(w, 'outerHTML', {
     get: () => html,
     set: (newHtml) => { if (widget === w) widget = makeWidget(newHtml); },
@@ -117,9 +125,10 @@ const fakeConsole = {
   error: (...args) => errors.push(args),
 };
 
-// Opens the page: the widget on it was fetched by the server at pageFetchedAt (null = no weather),
-// then runs weather.js in a fresh sandbox and returns the sandbox.
-function openPage(pageFetchedAt) {
+// Opens the page: the widget on it (big by default) was fetched by the server at pageFetchedAt
+// (null = no weather), then runs weather.js in a fresh sandbox and returns the sandbox.
+function openPage(pageFetchedAt, html = bigWidgetHtml) {
+  widgetHtml = html;
   fakePage(pageFetchedAt);
   timers = new Map();
   nextTimerId = 0;
@@ -160,7 +169,7 @@ describe('weather widget refresh (public/js/weather.js)', () => {
       assert.strictEqual(errors.length, 0);
     });
 
-    it('keeps the old widget when the weather API is down (503)', async () => {
+    it('keeps the old widget while it is still fresh when the server fails (503)', async () => {
       const before = widget;
       server.answer = { status: 503 };
       await refreshWeather();
@@ -168,7 +177,7 @@ describe('weather widget refresh (public/js/weather.js)', () => {
       assert.match(String(errors[0]?.[0]), /503/);
     });
 
-    it('keeps the old widget when the route does not exist (404)', async () => {
+    it('keeps the old widget while it is still fresh when the route does not exist (404)', async () => {
       const before = widget;
       server.answer = { status: 404 };
       await refreshWeather();
@@ -176,7 +185,7 @@ describe('weather widget refresh (public/js/weather.js)', () => {
       assert.match(String(errors[0]?.[0]), /404/);
     });
 
-    it('keeps the old widget and does not throw when the network fails', async () => {
+    it('keeps the old widget while it is still fresh and does not throw when the network fails', async () => {
       const before = widget;
       server.answer = 'network';
       await assert.doesNotReject(refreshWeather());
@@ -184,16 +193,72 @@ describe('weather widget refresh (public/js/weather.js)', () => {
       assert.strictEqual(errors.length, 1);
     });
 
+    it('shows "unavailable" instead of expired weather when the server fails', async () => {
+      sandbox = openPage(clock - 20 * MIN);
+      refreshWeather = vm.runInContext('refreshWeather', sandbox);
+      server.answer = { status: 503 };
+      await refreshWeather();
+      assert.match(widget.outerHTML, /מזג האוויר אינו זמין כרגע/);
+      assert.strictEqual(widget.dataset.fetchedAt, undefined);
+    });
+
+    it('shows "unavailable" instead of expired weather when the network fails', async () => {
+      sandbox = openPage(clock - 20 * MIN);
+      refreshWeather = vm.runInContext('refreshWeather', sandbox);
+      server.answer = 'network';
+      await assert.doesNotReject(refreshWeather());
+      assert.match(widget.outerHTML, /מזג האוויר אינו זמין כרגע/);
+    });
+
     it('does not call the server when the widget is not on the page', async () => {
       widget = null;
       await refreshWeather();
       assert.strictEqual(server.calls.length, 0);
     });
+
+    it('the big widget\'s "unavailable" is still the big widget', async () => {
+      sandbox = openPage(clock - 20 * MIN);
+      refreshWeather = vm.runInContext('refreshWeather', sandbox);
+      server.answer = { status: 503 };
+      await refreshWeather();
+      assert.match(widget.outerHTML, /^<section class="widget weather">/);
+    });
+  });
+
+  describe('small widget (article page)', () => {
+    const openSmall = (fetchedAt) => {
+      sandbox = openPage(fetchedAt, smallWidgetHtml);
+      refreshWeather = vm.runInContext('refreshWeather', sandbox);
+    };
+
+    it('asks the server for /weather-widget/small', async () => {
+      openSmall(clock - 10 * MIN);
+      await refreshWeather();
+      assert.deepStrictEqual(server.calls, ['/weather-widget/small']);
+      assert.strictEqual(widget.outerHTML, smallWidgetHtml(clock));
+    });
+
+    it('"unavailable" stays a small widget, and the next refresh still asks for the small one', async () => {
+      openSmall(clock - 20 * MIN);
+      server.answer = { status: 503 };
+      await refreshWeather();
+      assert.match(widget.outerHTML, /^<section class="widget weather weather--compact" data-refresh-url="\/weather-widget\/small">/);
+      assert.match(widget.outerHTML, /מזג האוויר אינו זמין כרגע/);
+      assert.strictEqual(widget.dataset.fetchedAt, undefined);
+
+      server.answer = { status: 200 };
+      await refreshWeather();
+      assert.deepStrictEqual(server.calls, ['/weather-widget/small', '/weather-widget/small']);
+    });
   });
 
   describe('schedule (3j)', () => {
-    it('uses a 15 minute refresh time', () => {
-      assert.strictEqual(vm.runInContext('REFRESH_MS', sandbox), 15 * MIN, 'still set to a short test value?');
+    it('uses a 14.5 minute refresh time', () => {
+      assert.strictEqual(vm.runInContext('REFRESH_MS', sandbox), 14.5 * MIN, 'still set to a short test value?');
+    });
+
+    it('refreshes in under 15 minutes, margin included', () => {
+      assert.ok(vm.runInContext('REFRESH_MS + MARGIN_MS', sandbox) < 15 * MIN);
     });
 
     it('does not refresh on page load (the page already has fresh data)', async () => {
@@ -201,9 +266,9 @@ describe('weather widget refresh (public/js/weather.js)', () => {
       assert.strictEqual(server.calls.length, 0);
     });
 
-    it('schedules the first refresh for when the server data expires, not 15 min after page load', async () => {
-      // data from 10 min ago -> expires in 5 min (+ the margin)
-      await passTime(5 * MIN);
+    it('schedules the first refresh for when the server data expires, not 14.5 min after page load', async () => {
+      // data from 10 min ago -> expires in 4.5 min (+ the margin)
+      await passTime(4.5 * MIN);
       assert.strictEqual(server.calls.length, 0, 'too early - the server cache has not expired yet');
       await passTime(10 * SEC);
       assert.strictEqual(server.calls.length, 1);
@@ -211,9 +276,9 @@ describe('weather widget refresh (public/js/weather.js)', () => {
     });
 
     it('keeps refreshing: each refresh schedules the next one from the new data', async () => {
-      await passTime(5 * MIN + 10 * SEC); // first refresh
-      await passTime(15 * MIN + 10 * SEC); // 15 min after the new data
-      await passTime(15 * MIN + 10 * SEC);
+      await passTime(4.5 * MIN + 10 * SEC); // first refresh
+      await passTime(14.5 * MIN + 10 * SEC); // 14.5 min after the new data
+      await passTime(14.5 * MIN + 10 * SEC);
       assert.strictEqual(server.calls.length, 3);
     });
 
@@ -231,6 +296,12 @@ describe('weather widget refresh (public/js/weather.js)', () => {
       await passTime(5 * MIN + 10 * SEC); // first try after the data expired
       await passTime(5 * MIN);
       assert.strictEqual(server.calls.length, 6);
+    });
+
+    it('API down when the data expires: the expired weather is replaced with "unavailable"', async () => {
+      server.answer = { status: 503 };
+      await passTime(5 * MIN + 10 * SEC);
+      assert.match(widget.outerHTML, /מזג האוויר אינו זמין כרגע/);
     });
 
     it('server sends back the same old data: retries once a minute, not in a loop', async () => {
@@ -256,7 +327,7 @@ describe('weather widget refresh (public/js/weather.js)', () => {
       await passTime(1 * MIN);
       assert.strictEqual(widget.dataset.fetchedAt, String(server.lastCallAt));
       const calls = server.calls.length;
-      await passTime(14 * MIN); // new data is fresh again - back to the normal schedule
+      await passTime(13 * MIN); // new data is fresh again - back to the normal schedule
       assert.strictEqual(server.calls.length, calls);
     });
   });

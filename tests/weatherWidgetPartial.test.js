@@ -104,6 +104,37 @@ describe('weather widget partial', () => {
     });
   });
 
+  describe('small widget (article page sidebar)', () => {
+    const SMALL = path.join(VIEWS, 'partials/weatherWidgetSmall.ejs');
+
+    it('shows the current weather, with no forecast', async () => {
+      const html = await render(SMALL, { weather: weatherData() });
+      assert.match(html, /מזג אוויר · תל אביב-יפו/);
+      assert.match(html, /24°/);
+      assert.match(html, /שמיים בהירים/);
+      assert.match(html, /openweathermap\.org\/img\/wn\/01d@2x\.png/);
+      assert.match(html, /עודכן ב־14:30/);
+      assert.doesNotMatch(html, /weather__forecast/);
+    });
+
+    it('is compact, and tells weather.js where to refresh from and when the data was fetched', async () => {
+      const html = await render(SMALL, { weather: weatherData() });
+      assert.match(html, new RegExp(`^<section class="widget weather weather--compact" data-refresh-url="/weather-widget/small" data-fetched-at="${SUMMER_FETCH}">`));
+    });
+
+    it('says the weather is unavailable when there is none', async () => {
+      const html = await render(SMALL, { weather: null });
+      assert.match(html, /^<section class="widget weather weather--compact" data-refresh-url="\/weather-widget\/small">/);
+      assert.match(html, /מזג האוויר אינו זמין כרגע/);
+      assert.doesNotMatch(html, /עודכן ב/);
+    });
+
+    it('escapes the data from the API', async () => {
+      const html = await render(SMALL, { weather: weatherData({ city: '<script>alert(1)</script>' }) });
+      assert.doesNotMatch(html, /<script>/);
+    });
+  });
+
   describe('home page', () => {
     const homeData = (weather) => ({ weather, forecast: null, query: {}, categories: ['חדשות'] });
 
