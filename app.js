@@ -13,6 +13,7 @@ const reporterRoutes = require('./routes/reporterRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 const editorRoutes = require('./routes/editorRoutes');
 const apiRoutes = require('./routes/api');
+const homePageRoutes = require('./routes/homePageRoutes');
 
 const app = express();
 
@@ -50,9 +51,8 @@ app.use('/articles', articleRoutes);
 
 app.use('/editor', editorRoutes);
 
+app.use('/', homePageRoutes);
 // Pages (for now they show the design's sample data)
-app.get('/', (req, res) => res.render('home', { query: req.query }));
-
 app.get('/stats', (req, res) => res.render('stats', { query: req.query }));
 
 app.use(notFound);
