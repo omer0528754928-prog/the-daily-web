@@ -326,6 +326,7 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
   white-space: nowrap;
 }
 .btn:hover { text-decoration: none; }
+.btn:disabled { opacity: 0.45; cursor: default; }
 .btn-sm { padding: 8px 14px; font-size: 13px; }
 .btn-xs { padding: 6px 10px; font-size: 12.5px; font-weight: 500; }
 .btn-lg { padding: 14px; font-size: 15px; }
@@ -924,15 +925,6 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
 .form-fields:disabled select,
 .form-fields:disabled textarea { background: #f2f5fb; color: var(--text-soft); cursor: default; }
 
-.republish {
-  background: #edf6ff;
-  border: 1px solid #d0dff6;
-  border-radius: 12px;
-  padding: 14px 16px;
-}
-.republish .hint { font-weight: 400; }
-.republish input { max-width: 280px; }
-
 .notes {
   background: var(--bg);
   border: 1px solid #e3e8f0;
@@ -1134,6 +1126,7 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
   outline: none;
 }
 .filter-date input:focus { border-color: var(--primary); }
+.filter-problem { margin: 0; font-size: 12px; color: var(--red); }
 .filter-menu__actions {
   display: flex;
   gap: 8px;

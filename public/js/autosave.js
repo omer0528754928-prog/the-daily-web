@@ -7,7 +7,7 @@
   if (!form) return; // read-only view of an article waiting for the editor
 
   const status = form.querySelector('[data-autosave-status]');
-  const fields = ['title', 'category', 'summary', 'body', 'republishAt']
+  const fields = ['title', 'category', 'summary', 'body']
     .map(name => form.elements[name])
     .filter(Boolean);
   const imageField = form.elements.image;
@@ -19,8 +19,8 @@
     summary: 'התקציר ארוך מדי',
     body: 'גוף הכתבה ארוך מדי',
     image: 'הקובץ אינו תמונה תקינה (JPEG, PNG, GIF או WebP, עד 5MB)',
-    republishAt: 'תאריך הפרסום מחדש חייב להיות תקין ובעתיד',
   };
+  const TITLE_TOO_LONG = 'הכותרת עד 200 תווים';
 
   const IDLE_MS = 1500;       // save this long after the last keystroke
   const MIN_TITLE = 3;        // a new article is created only once it has a real title
@@ -48,13 +48,7 @@
   }
 
   function content() {
-    const values = {};
-    for (const field of fields) {
-      // An empty date means "no change", so it is left out
-      if (field.name === 'republishAt' && !field.value) continue;
-      values[field.name] = field.value;
-    }
-    return values;
+    return Object.fromEntries(fields.map(field => [field.name, field.value]));
   }
 
   // With an image the request must be form data, which is also what the server
@@ -125,7 +119,10 @@
       if (res.status === 409) return stop('הכתבה נשלחה לעורך — השינויים האחרונים לא נשמרו');
       if (!res.ok) {
         const problem = await res.json().catch(() => ({}));
-        const reasons = Object.keys(problem.details || {}).map(field => PROBLEMS[field] || field);
+        // The server refuses a title for two reasons: empty, or over the length limit
+        const reasons = Object.keys(problem.details || {}).map(field => (
+          field === 'title' && form.elements.title.value.trim() ? TITLE_TOO_LONG : PROBLEMS[field] || field
+        ));
         show(reasons.length ? `לא נשמר: ${reasons.join(', ')}` : 'השמירה האוטומטית נכשלה — נסו שוב בעוד רגע', true);
         return;
       }
@@ -149,7 +146,7 @@
       }
       show('✓ נשמר אוטומטית');
     } catch {
-      show('אין חיבור לשרת — השינויים נשמרו בדפדפן בלבד', true);
+      show('אין חיבור לשרת — השינויים לא נשמרו', true);
     } finally {
       saving = false;
     }
