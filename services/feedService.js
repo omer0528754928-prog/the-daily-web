@@ -17,6 +17,7 @@ function buildFeedFilter(filters = {}) {
   if (filters.category?.length) filter['liveVersion.category'] = filters.category;
   // $text searches the text index on liveVersion.title (see models/Article.js)
   if (filters.q?.length) filter.$text = { $search: filters.q };
+  // "unseen": leave out the articles this device already opened (Mongoose turns the id strings into ObjectIds)
   if (filters.view === 'unseen' && filters.seen?.length) filter._id = { $nin: filters.seen };
 
   return filter;

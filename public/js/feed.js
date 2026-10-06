@@ -1,5 +1,6 @@
 // Home page feed: infinite scroll (loads more cards from /api/feed near the bottom of the page)
-// and changing the category / search / sort without reloading the page.
+// and changing the category / search / sort / view without reloading the page.
+// It also remembers which articles were opened, for the "לא נצפו" view.
 // Everything is inside a function that runs right away, so its variables don't leak into the page.
 (() => {
   const LIMIT = 20; // cards per batch, same as the first batch the server renders
@@ -47,7 +48,7 @@
 
   // One batch of cards from the API, with the same filters as the current page
   const fetchBatch = async (skip = 0) => {
-    // the page URL already has the filters (category, q, sort), only skip and limit are added
+    // the page URL already has the filters (category, q, sort, view), only skip and limit are added
     const params = new URLSearchParams(location.search);
     params.set('skip', skip);
     params.set('limit', LIMIT);
@@ -264,7 +265,8 @@
   const searchInput = searchForm.querySelector('input[name="q"]');
 
   // Each control changes only its own filter and keeps the rest from the current URL
-  // (the hrefs and hidden fields the server rendered go stale after an Ajax change)
+  // (the hrefs and hidden fields the server rendered go stale after an Ajax change).
+
   // The category <select> changed (or its form was sent)
   const onCategoryChange = () => {
     const params = new URLSearchParams(location.search);
@@ -352,6 +354,7 @@
 
   // Remember every article opened from this page (feed cards, the ticker, "most viewed").
   // One listener on the document also covers cards added later by the infinite scroll.
+  // A middle-click fires "auxclick", not "click", so an article opened that way isn't remembered.
   document.addEventListener('click', (event) => {
     const link = event.target.closest('a[href^="/articles/"]');
     if (link) markRead(link.getAttribute('href').split('/').pop());

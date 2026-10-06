@@ -12,7 +12,7 @@
   const sorts = [{ value: 'date', label: 'תאריך' }, { value: 'popular', label: 'פופולריות' }];
   const views = [{ value: 'all', label: 'הכל' }, { value: 'unseen', label: 'לא נצפו' }];
   
-  // The pills filter by localStorage
+  // "לא נצפו" hides the articles this device already opened (feed.js keeps that list in localStorage)
   const showViewFilter = true;
   // Builds a feed link that keeps the current filters and changes only the given ones
   const feedLink = (changes) => {
@@ -20,8 +20,8 @@
     return `/?${params}`;
   };
 
-  // The lead + side cards layout is only for the plain home page. A filtered view (category, search
-  // or sort) is a plain grid, the same layout feed.js builds after an Ajax filter change.
+  // The lead + side cards layout is only for the plain home page. A filtered view (category, search,
+  // sort or "unseen") is a plain grid, the same layout feed.js builds after an Ajax filter change.
   const isFiltered = Boolean(query.category || query.q || query.sort|| query.view === 'unseen');
   const lead = isFiltered ? null : articles[0];
   const sideStories = isFiltered ? [] : articles.slice(1, 4);
