@@ -117,6 +117,9 @@
       );
 
       if (res.status === 409) return stop('הכתבה נשלחה לעורך — השינויים האחרונים לא נשמרו');
+      // 413 = the body passed the server's size limit. The connection is fine,
+      // so this is not a "no connection" error — tell the reporter the text is too long.
+      if (res.status === 413) { show('גוף הכתבה ארוך מדי', true); return; }
       if (!res.ok) {
         const problem = await res.json().catch(() => ({}));
         // The server refuses a title for two reasons: empty, or over the length limit
