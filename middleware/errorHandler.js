@@ -65,6 +65,8 @@ function errorHandler(err, req, res, next) {
 
   const { status, message, details } = normalizeError(err);
   if (status >= 500) {
+    // The cause is printed for the developer only; the database log below stays secret-free
+    console.error(err);
     const userId = req.session?.user?.id;
     void recordLog({
       level: 'error',

@@ -25,7 +25,6 @@
           { time: 'שלישי, 09:40', by: 'עורך: מיכל רן', text: 'נא להוסיף כתובית וקרדיט צילום לתמונה הראשית.' },
         ],
       });
-  const isPublished = mode === 'edit' && article.status === 'פורסמה';
 
   const pageTitle = isNew ? 'כתבה חדשה' : isView ? 'צפייה בפרטי הכתבה' : 'עריכת כתבה';
   const subtitle = isNew ? 'טיוטה חדשה' : isView ? 'תצוגה בלבד — לא ניתן לערוך כתבה שממתינה לאישור עורך' : 'טיוטה';
@@ -120,13 +119,6 @@
         <label class="field">גוף הכתבה
           <textarea name="body" rows="10" class="field__body"><%= article.body %></textarea>
         </label>
-
-        <% if (isPublished) { %>
-          <label class="field republish">תאריך פרסום מחדש
-            <span class="hint">הכתבה כבר פורסמה (<%= article.published %>) — הגרסה המעודכנת תעבור אישור עורך ותפורסם מחדש במועד שייבחר. עד לאישור, הגרסה שאושרה בעבר ממשיכה להיות מוצגת לציבור.</span>
-            <input type="datetime-local" name="republishAt">
-          </label>
-        <% } %>
       </fieldset>
     </div>
 
@@ -142,5 +134,10 @@
   </form>
 </main>
 
+<% if (!isView && article.live) { %>
+  <%# "<" is escaped so text from the article can never close the script tag %>
+  <script type="application/json" id="live-version"><%- JSON.stringify(article.live).replace(/</g, '\\u003c') %></script>
+  <script src="/js/sendButton.js" defer></script>
+<% } %>
 <script src="/js/autosave.js" defer></script>
 <%- include('partials/footer') %>

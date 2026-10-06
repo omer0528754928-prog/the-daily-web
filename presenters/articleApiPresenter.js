@@ -41,7 +41,6 @@ function toArticleDetail(article) {
     version: article.version,
     hasUnapprovedChanges: Boolean(live) && article.version > live.version,
     submittedAt: article.submittedAt ?? null,
-    republishAt: article.republishAt ?? null,
     returnedCount: article.returnedCount,
     views: article.views,
     editorNotes: [...(article.editorNotes || [])]

@@ -11,6 +11,10 @@ const IMAGE_SIGNATURES = [
   { ext: '.webp', matches: b => b.subarray(0, 4).toString('ascii') === 'RIFF' && b.subarray(8, 12).toString('ascii') === 'WEBP' },
 ];
 
+function tooLongMessage(max) {
+  return `Must be at most ${max} characters`;
+}
+
 function toText(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -33,7 +37,7 @@ function checkContent(content, { requireAll }) {
   if (requireAll && !content.body) errors.body = 'Body is required before sending to the editor';
 
   for (const [field, max] of Object.entries(LIMITS)) {
-    if (content[field].length > max) errors[field] = `Must be at most ${max} characters`;
+    if (content[field].length > max) errors[field] = tooLongMessage(max);
   }
 
   return errors;
@@ -51,16 +55,6 @@ function validateForSubmit(input) {
   return { value, errors: checkContent(value, { requireAll: true }) };
 }
 
-// Returns undefined when no date was sent (keep the existing one)
-function validateRepublishAt(raw, now = new Date()) {
-  if (raw === undefined || raw === null || raw === '') return { value: undefined };
-
-  const date = new Date(raw);
-  if (Number.isNaN(date.getTime())) return { error: 'Republish date is not valid' };
-  if (date <= now) return { error: 'Republish date must be in the future' };
-  return { value: date };
-}
-
 // file: { buffer, size } from the form, or undefined when no image was chosen
 function validateImage(file) {
   if (!file) return { value: undefined };
@@ -71,4 +65,4 @@ function validateImage(file) {
   return { value: { buffer: file.buffer, ext: signature.ext } };
 }
 
-module.exports = { LIMITS, validateDraft, validateForSubmit, validateRepublishAt, validateImage };
+module.exports = { LIMITS, tooLongMessage, validateDraft, validateForSubmit, validateImage };

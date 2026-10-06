@@ -2,6 +2,7 @@ const CATEGORIES = require('../config/categories');
 const { STATUS, STATUS_LABELS } = require('../config/articleStatus');
 const { formatRelative } = require('../utils/dates');
 const { formatReturned, formatPublished, formatViews } = require('./reporterArticlePresenter');
+const { LIMITS, tooLongMessage } = require('../validators/articleValidator');
 
 // What the reporter should fix, in the words used in the form
 const FIELD_PROBLEMS = {
@@ -10,12 +11,21 @@ const FIELD_PROBLEMS = {
   summary: 'התקציר ארוך מדי',
   body: 'חובה למלא את גוף הכתבה לפני שליחה לאישור עורך',
   image: 'הקובץ אינו תמונה תקינה (JPEG, PNG, GIF או WebP, עד 5MB)',
-  republishAt: 'תאריך הפרסום מחדש חייב להיות תקין ובעתיד',
+};
+
+// A field over its length limit is a different problem from a missing one
+const TOO_LONG_PROBLEMS = {
+  title: `הכותרת עד ${LIMITS.title} תווים`,
+  summary: 'התקציר ארוך מדי',
+  body: 'גוף הכתבה ארוך מדי',
 };
 
 // details: { field: 'English message' } from the validator
 function toProblemMessages(details = {}) {
-  return Object.entries(details).map(([field, message]) => FIELD_PROBLEMS[field] || `${field}: ${message}`);
+  return Object.entries(details).map(([field, message]) => {
+    if (TOO_LONG_PROBLEMS[field] && message === tooLongMessage(LIMITS[field])) return TOO_LONG_PROBLEMS[field];
+    return FIELD_PROBLEMS[field] || `${field}: ${message}`;
+  });
 }
 
 // Starting values for "+ כתבה חדשה"
@@ -47,6 +57,7 @@ function toNoteRows(editorNotes = []) {
 // input (optional) is what the reporter just typed, shown again when saving failed.
 function toArticleForm(article, authorName, input = {}) {
   const pick = field => (typeof input[field] === 'string' ? input[field] : article[field]);
+  const live = article.liveVersion;
 
   return {
     id: article._id ? String(article._id) : undefined,
@@ -62,6 +73,10 @@ function toArticleForm(article, authorName, input = {}) {
     returned: formatReturned(article.returnedCount),
     views: formatViews(article),
     notes: toNoteRows(article.editorNotes),
+    // The version the public sees, so the form can tell when there is nothing new to send
+    live: live
+      ? { title: live.title, summary: live.summary, body: live.body, category: live.category, image: live.image ?? null }
+      : null,
   };
 }
 
