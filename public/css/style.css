@@ -488,6 +488,8 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
   border-bottom: 1px solid #d8dfe8;
 }
 .filters__group { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
+/* display:flex above would otherwise beat the browser's [hidden] rule */
+.filters__group[hidden] { display: none; }
 .filters__label { font-size: 12px; font-weight: 700; letter-spacing: 0.09em; color: #515963; }
 .filters select {
   border: 0;

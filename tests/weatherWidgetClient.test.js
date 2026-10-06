@@ -43,10 +43,13 @@ const pendingTimers = () => [...timers.values()];
 // the script doesn't await its own promises, so let them finish before checking
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
+// Moves the fake clock forward by ms, running every timer that comes due on the way, earliest first.
+// A timer may schedule a new one (the refresh loop does), so the list is checked again after each run.
 async function passTime(ms) {
   const end = clock + ms;
   for (let fired = 0; ; fired++) {
     if (fired > 1000) throw new Error('timers keep firing - endless refresh loop');
+    // the earliest timer that is due before `end` (undefined when there is none left)
     const due = [...timers.entries()].filter(([, t]) => t.at <= end).sort((a, b) => a[1].at - b[1].at)[0];
     if (!due) break;
     const [id, timer] = due;
@@ -64,6 +67,7 @@ async function passTime(ms) {
 // page.hide() / page.show() switch document.hidden and fire the visibilitychange listeners.
 let widget;
 let page;
+// A fake <section> element built from the widget HTML: className, dataset and an outerHTML setter
 function makeWidget(html) {
   const attr = (name) => html.match(new RegExp(`${name}="([^"]*)"`))?.[1];
   const w = { className: attr('class'), dataset: {} };

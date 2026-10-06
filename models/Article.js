@@ -64,6 +64,8 @@ articleSchema.index({ author: 1, status: 1, updatedAt: -1 });
 articleSchema.index({ author: 1, updatedAt: -1 });
 
 //homepage related indexes
+// _id is the tie-breaker: articles with the same date / views always come in the same order,
+// so the feed's skip-based batches never repeat or miss an article
 articleSchema.index({'liveVersion.publishedAt': -1 ,_id:-1});//sort by date then id 
 articleSchema.index({'views': -1 ,_id:-1});//sort by views then id 
 
@@ -72,6 +74,7 @@ articleSchema.index({'liveVersion.category': 1, 'liveVersion.publishedAt': -1 ,_
 articleSchema.index({'liveVersion.category': 1, views: -1 ,_id:-1});//sort by views then id 
 
 //search by title
+// default_language 'none': MongoDB has no Hebrew rules, so match whole words without stemming or stop words
 articleSchema.index({ 'liveVersion.title': 'text' }, { default_language: 'none' });
 
 

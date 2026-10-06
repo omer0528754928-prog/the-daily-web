@@ -10,10 +10,10 @@
   const sort = query.sort || 'date';
   const view = query.view || 'all';
   const sorts = [{ value: 'date', label: 'תאריך' }, { value: 'popular', label: 'פופולריות' }];
-  const views = [{ value: 'all', label: 'הכל' }, { value: 'unseen', label: 'לא נצפו' }, { value: 'seen', label: 'נצפו' }];
-  // TODO: seen/unseen is hidden until the team decides where views are tracked (ViewStat, Member 5).
-  // The pills don't filter anything yet: the server and feed.js ignore "view".
-  const showViewFilter = false;
+  const views = [{ value: 'all', label: 'הכל' }, { value: 'unseen', label: 'לא נצפו' }];
+  
+  // The pills filter by localStorage
+  const showViewFilter = true;
   // Builds a feed link that keeps the current filters and changes only the given ones
   const feedLink = (changes) => {
     const params = new URLSearchParams({ ...query, ...changes });
@@ -22,7 +22,7 @@
 
   // The lead + side cards layout is only for the plain home page. A filtered view (category, search
   // or sort) is a plain grid, the same layout feed.js builds after an Ajax filter change.
-  const isFiltered = Boolean(query.category || query.q || query.sort);
+  const isFiltered = Boolean(query.category || query.q || query.sort|| query.view === 'unseen');
   const lead = isFiltered ? null : articles[0];
   const sideStories = isFiltered ? [] : articles.slice(1, 4);
   const moreStories = isFiltered ? articles : articles.slice(4);
@@ -36,6 +36,8 @@
     <span class="ticker__label">מבזקים</span>
     <div class="ticker__window">
       <div class="ticker__track">
+        <%# The items are written twice: the animation moves the track by half its width and starts over,
+            and at that point the second copy is exactly where the first one began, so the loop has no jump %>
         <% [...ticker, ...ticker].forEach(item => { %>
             <a href="/articles/<%= item.id %>" class="ticker__item"><%= item.title %></a>
         <% }) %>
@@ -66,10 +68,11 @@
       <% }) %>
     </div>
     <% if (showViewFilter) { %>
-      <div class="filters__group">
+      <%# Hidden until feed.js shows it: the read list is in localStorage, so the filter needs JS %>
+      <div class="filters__group" data-view-filter hidden>
         <span class="filters__label">תצוגה</span>
         <% views.forEach(option => { %>
-          <a href="<%= feedLink({ view: option.value }) %>" class="pill <%= view === option.value ? 'is-active' : '' %>"><%= option.label %></a>
+          <a href="<%= feedLink({ view: option.value }) %>" class="pill <%= view === option.value ? 'is-active' : '' %>" data-view="<%= option.value %>"><%= option.label %></a>
         <% }) %>
       </div>
     <% } %>
@@ -105,7 +108,8 @@
           </div>
         </div>
       <% } %>
-      <p class="empty feed-empty" <%= articles.length ? 'hidden' : '' %>>לא נמצאו כתבות.</p>
+      <%# Hidden in the "unseen" view too: the server sends it empty and feed.js loads the first batch %>
+      <p class="empty feed-empty" <%= (articles.length || query.view === 'unseen') ? 'hidden' : '' %>>לא נמצאו כתבות.</p>
 
       <section>
         <div class="section-title" <%= moreStories.length && !isFiltered ? '' : 'hidden' %>>
@@ -150,6 +154,7 @@
           </a>
         </template>
       </section>
+      <%# feed.js watches this element for the infinite scroll, and starts from where the server stopped %>
       <div class="refresh-sentinel" data-has-more="<%= hasMore %>" data-next-skip="<%= articles.length %>"></div>
       <div class="feed-error" hidden>
         <span>לא הצלחנו לטעון כתבות נוספות.</span>
