@@ -20,12 +20,16 @@
       <h1>אזור העורך</h1>
       <p><%= pager.total %> כתבות · מסונן לפי «<%= activeLabel %>»</p>
     </div>
-    <nav class="tabs">
-      <% tabs.forEach(tab => { %>
-        <a href="<%= statusHref(tab.key) %>" class="pill <%= activeStatus === tab.key ? 'is-active' : '' %>"><%= tab.label %></a>
-      <% }) %>
-    </nav>
+    <div class="page-head__actions">
+      <a href="/stats" class="btn btn-outline">אזור הסטטיסטיקות ←</a>
+    </div>
   </div>
+
+  <nav class="tabs">
+    <% tabs.forEach(tab => { %>
+      <a href="<%= statusHref(tab.key) %>" class="pill <%= activeStatus === tab.key ? 'is-active' : '' %>"><%= tab.label %></a>
+    <% }) %>
+  </nav>
 
   <div class="queue">
     <% queue.forEach(article => { %>
