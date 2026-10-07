@@ -4,6 +4,7 @@ const weatherService = require('../services/weatherService');
 const { toPublicArticle, toRelatedItem } = require('../presenters/publicArticlePresenter');
 const { toPublicComment, toCommentProblems, toCommentForm } = require('../presenters/commentPresenter');
 const { LIMITS: COMMENT_LIMITS } = require('../validators/commentValidator');
+const { recordUsageEvent } = require('../services/analyticsService');
 
 const COMMENTS_PER_PAGE = 20;
 
@@ -33,6 +34,9 @@ async function renderArticlePage(req, res, { status = 200, commentForm = {}, com
 
 // GET /articles/:id
 function showArticle(req, res) {
+  // Count the visit for the editor's Impact Analytics. Fire-and-forget: a logging
+  // failure must never break the public page, so the promise is intentionally not awaited.
+  void recordUsageEvent({ type: 'article_view', source: 'article_page', articleId: req.article._id });
   return renderArticlePage(req, res);
 }
 
