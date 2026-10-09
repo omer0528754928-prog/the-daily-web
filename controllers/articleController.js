@@ -5,6 +5,7 @@ const { toPublicArticle, toRelatedItem } = require('../presenters/publicArticleP
 const { toPublicComment, toCommentProblems, toCommentForm } = require('../presenters/commentPresenter');
 const { LIMITS: COMMENT_LIMITS } = require('../validators/commentValidator');
 const { ROLES } = require('../models/User');
+const { recordUsageEvent } = require('../services/analyticsService');
 
 const COMMENTS_PER_PAGE = 20;
 
@@ -38,6 +39,13 @@ async function renderArticlePage(req, res, { status = 200, commentForm = {}, com
 
 // GET /articles/:id
 function showArticle(req, res) {
+  // Count the visit for the editor's Impact Analytics. Fire-and-forget: a logging
+  // failure must never break the public page, so the promise is intentionally not awaited.
+  void recordUsageEvent({ type: 'article_view', source: 'article_page', articleId: req.article._id });
+  // +1 to the total shown on the page and used by the feed's "popular" sort.
+  // Also not awaited: if it fails, the reader still gets the page and the error is logged.
+  publicArticleService.incrementViews(req.article._id)
+    .catch(() => console.error('Could not count an article view.'));
   return renderArticlePage(req, res);
 }
 
