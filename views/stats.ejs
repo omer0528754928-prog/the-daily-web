@@ -34,22 +34,35 @@
     <a href="/editor" class="btn btn-outline">→ חזרה לאזור העורך</a>
   </div>
 
+  <% if (locals.connectedUsers !== null && typeof locals.connectedUsers !== 'undefined') { %>
+    <div class="kpis">
+      <div class="card kpi">
+        <span class="kpi__label">משתמשים מחוברים כעת</span>
+        <span class="kpi__value"><%= connectedUsers %></span>
+        <span class="kpi__delta">נתון חי מכלל האתר</span>
+      </div>
+    </div>
+  <% } %>
+
   <% if (!picker.length) { %>
     <section class="card panel">
       <p class="empty">עדיין אין כתבות שפורסמו, ולכן אין נתוני צפיות להצגה.</p>
     </section>
   <% } else { %>
-    <%# Filter the data by article. Works without JavaScript (submit button); with JS it submits on change. %>
-    <form method="get" class="stats-filter" data-stats-filter>
-      <label class="field">בחירת כתבה
-        <select name="article" data-stats-select>
-          <% picker.forEach(item => { %>
-            <option value="<%= item.key %>" <%= selected && selected.key === item.key ? 'selected' : '' %>><%= item.label %></option>
-          <% }) %>
-        </select>
-      </label>
-      <button type="submit" class="btn btn-primary">הצגה</button>
-    </form>
+    <%# Article filter: a native <details> dropdown. The menu shows about 10 articles and
+        then scrolls, so a long list stays compact. Each option is a link, so it also works
+        without JavaScript. %>
+    <details class="stats-picker">
+      <summary class="stats-picker__summary">
+        <span class="stats-picker__current">בחירת כתבה: <strong><%= selected ? selected.label : '—' %></strong></span>
+        <span class="stats-picker__caret" aria-hidden="true">▾</span>
+      </summary>
+      <div class="stats-picker__menu" role="listbox">
+        <% picker.forEach(item => { %>
+          <a href="/stats?article=<%= item.key %>" class="stats-picker__item <%= selected && selected.key === item.key ? 'is-active' : '' %>"><%= item.label %></a>
+        <% }) %>
+      </div>
+    </details>
 
     <div class="kpis">
       <% kpis.forEach(kpi => { %>
@@ -98,5 +111,4 @@
   <% } %>
 </main>
 
-<script src="/js/statsFilter.js" defer></script>
 <%- include('partials/footer') %>

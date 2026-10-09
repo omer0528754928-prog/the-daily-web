@@ -676,7 +676,7 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
 
 .article { border-radius: var(--radius-lg); padding: 26px 28px 32px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .breadcrumb { font-size: 13px; color: var(--text-muted); }
-.article__title { font-size: 36px; line-height: 1.18; font-weight: 800; text-wrap: pretty; }
+.article__title { font-size: 36px; line-height: 1.18; font-weight: 800; text-wrap: pretty; overflow-wrap: anywhere; word-break: break-word; }
 .article__summary { font-size: 18px; line-height: 1.6; color: var(--text-soft); font-weight: 500; text-wrap: pretty; }
 .byline {
   display: flex;
@@ -1209,3 +1209,29 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
   font-weight: 700;
 }
 .popup__text { font-size: 16px; font-weight: 600; line-height: 1.5; }
+
+/* Impact Analytics — article picker: a dropdown that shows ~10 articles then scrolls */
+.stats-picker { position: relative; display: inline-block; margin-bottom: 18px; max-width: 440px; }
+.stats-picker__summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px; cursor: pointer; list-style: none;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); color: var(--text); font-weight: 600;
+}
+.stats-picker__summary::-webkit-details-marker { display: none; }
+.stats-picker__caret { color: var(--text-muted); transition: transform .15s ease; }
+.stats-picker[open] .stats-picker__caret { transform: rotate(180deg); }
+.stats-picker__menu {
+  position: absolute; z-index: 30; inset-inline-start: 0; margin-top: 6px;
+  min-width: 100%; max-height: 380px; overflow-y: auto;   /* ~10 rows, then scroll */
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); box-shadow: 0 10px 28px rgba(13, 27, 47, .15);
+}
+.stats-picker__item {
+  display: block; padding: 9px 14px; color: var(--text-body);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stats-picker__item:last-child { border-bottom: none; }
+.stats-picker__item:hover { background: var(--surface-tint); text-decoration: none; }
+.stats-picker__item.is-active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 700; }
