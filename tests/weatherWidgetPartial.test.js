@@ -20,6 +20,7 @@ const render = (file, data) => ejs.renderFile(file, data);
 const SUMMER_FETCH =Date.UTC(2026, 8, 28, 11, 30); // 11:30 UTC = 14:30 in Israel (summer time, UTC+3)
 const WINTER_FETCH = Date.UTC(2026, 11, 1, 11, 30); // 11:30 UTC = 13:30 in Israel (winter time, UTC+2)
 
+// What weatherService.getCurrentWeather returns; overrides changes single fields for one test
 const weatherData = (overrides = {}) => ({
   city: 'תל אביב-יפו',
   temp: '24°',

@@ -1,4 +1,6 @@
 <section class="widget weather weather--compact" data-refresh-url="/weather-widget/small"<% if (weather) { %> data-fetched-at="<%= weather.fetchedAt %>"<% } %>>
+        <%# data-refresh-url tells public/js/weather.js to refresh from the small widget's route,
+            data-fetched-at (only when there is weather) tells it when %>
         <% if (weather) { %>
           <div class="weather__main">
             <div>

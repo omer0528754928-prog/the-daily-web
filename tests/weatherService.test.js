@@ -50,14 +50,16 @@ function fakeApi() {
   };
 }
 
+// The parts of OpenWeatherMap's /weather answer that the service reads
 function weatherPayload(temp) {
   return { name: 'Tel Aviv', main: { temp, humidity: 50 }, weather: [{ main: 'Clear', description: 'בהיר', icon: '01d' }] };
 }
 
+// The parts of OpenWeatherMap's /forecast answer that the service reads (times in seconds, UTC)
 function forecastPayload(temp) {
   const DAY = 24 * 60 * 60;
   const nowSec = Math.floor(Date.now() / 1000);
-  const startOfToday = nowSec - (nowSec % DAY);
+  const startOfToday = nowSec - (nowSec % DAY); // midnight UTC today (timezone is 0 below)
   // one entry at noon for each of the next 4 days
   const list = [1, 2, 3, 4].map(d => ({ dt: startOfToday + d * DAY + 12 * 60 * 60, main: { temp } }));
   return { city: { timezone: 0 }, list };
