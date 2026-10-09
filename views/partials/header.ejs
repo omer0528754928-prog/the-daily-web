@@ -2,6 +2,8 @@
   const active = locals.active || '';
   const query = locals.query || {};
   const currentCategory = query.category || 'הכל';
+  // The white bar (categories + search) is shown only on pages that ask for it: the home feed and the public article page.
+  const showCategoryBar = locals.showCategoryBar === true;
   const today = new Date().toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const navLinks = [
     { key: 'feed', href: '/', label: 'פיד הבית' },
@@ -88,6 +90,7 @@
   <% } %>
 </div>
 
+<% if (showCategoryBar) { %>
 <header class="site-header">
   <div class="container site-header__inner">
     <nav class="cat-nav">
@@ -107,3 +110,4 @@
     </form>
   </div>
 </header>
+<% } %>
