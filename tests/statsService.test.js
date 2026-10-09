@@ -6,7 +6,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
 
-const { bucketByTime, bucketIndex, updateBuckets, buildKpis } = require('../services/statsService');
+const { bucketByTime, bucketIndex, updateBuckets, splitByTime, buildKpis } = require('../services/statsService');
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -64,14 +64,40 @@ describe('statsService.updateBuckets', () => {
   });
 });
 
-describe('statsService.buildKpis', () => {
-  it('reports total views, and a before/after only when there was an update', () => {
-    const series = { counts: [2, 3, 5, 10] };
-    const withUpdate = buildKpis(series, [2]); // last update at bucket 2
-    assert.strictEqual(withUpdate[0].value, '20');                 // total = 2+3+5+10
-    assert.ok(withUpdate.some(k => k.label.includes('אחרי/לפני'))); // before/after card present
+describe('statsService.splitByTime', () => {
+  it('counts views before and after the split moment exactly (the split belongs to "after")', () => {
+    const times = [new Date(1 * HOUR), new Date(2 * HOUR), new Date(5 * HOUR), new Date(9 * HOUR)];
+    assert.deepStrictEqual(splitByTime(times, 5 * HOUR), { before: 2, after: 2 });
+    assert.deepStrictEqual(splitByTime([], 5 * HOUR), { before: 0, after: 0 });
+  });
+});
 
-    const noUpdate = buildKpis(series, []);
-    assert.ok(!noUpdate.some(k => k.label.includes('אחרי/לפני'))); // none without updates
+describe('statsService.buildKpis', () => {
+  it('shows total, and a before/after card only when there was an update', () => {
+    const withSplit = buildKpis({ total: 20, peak: 10, updateCount: 1, split: { before: 8, after: 12 } });
+    assert.strictEqual(withSplit[0].value, '20');
+    assert.ok(withSplit.some(k => k.label.includes('אחרי/לפני'))); // before/after card present
+
+    const noSplit = buildKpis({ total: 20, peak: 10, updateCount: 0, split: null });
+    assert.ok(!noSplit.some(k => k.label.includes('אחרי/לפני'))); // none without updates
+  });
+});
+
+describe('article_view recording (analyticsService)', () => {
+  it('accepts and stores a valid article_view event (so each visit is counted)', async () => {
+    const UsageEvent = require('../models/UsageEvent');
+    const originalCreate = UsageEvent.create;
+    let created = null;
+    UsageEvent.create = async (doc) => { created = doc; return doc; };
+    try {
+      const { recordUsageEvent } = require('../services/analyticsService');
+      const ok = await recordUsageEvent({ type: 'article_view', source: 'article_page', articleId: 'aaaaaaaaaaaaaaaaaaaaaaaa' });
+      assert.strictEqual(ok, true);
+      assert.strictEqual(created.type, 'article_view');
+      assert.strictEqual(created.source, 'article_page');
+      assert.strictEqual(created.articleId, 'aaaaaaaaaaaaaaaaaaaaaaaa');
+    } finally {
+      UsageEvent.create = originalCreate;
+    }
   });
 });

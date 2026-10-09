@@ -51,31 +51,30 @@ function formatLabel(ms, hourly) {
   return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
 }
 
-// A few headline numbers derived from the same series, so the view stays simple
-function buildKpis(series, updateIndices) {
-  const counts = series.counts;
-  const total = counts.reduce((sum, n) => sum + n, 0);
-  const peak = counts.length ? Math.max(...counts) : 0;
-
-  // Views before vs after the last published update, to show its impact
-  let beforeAfter = null;
-  if (updateIndices.length) {
-    const last = updateIndices[updateIndices.length - 1];
-    const before = counts.slice(0, last).reduce((sum, n) => sum + n, 0);
-    const after = counts.slice(last).reduce((sum, n) => sum + n, 0);
-    beforeAfter = { before, after };
+// Exact split of views before vs after a moment in time (the last republish).
+// Counted from the real view timestamps, not from the graph buckets, so it is precise.
+function splitByTime(viewTimes, splitMs) {
+  let before = 0;
+  let after = 0;
+  for (const time of viewTimes) {
+    if (new Date(time).getTime() < splitMs) before++;
+    else after++;
   }
+  return { before, after };
+}
 
+// The headline numbers shown above the graph. All are plain counts so the view stays simple.
+function buildKpis({ total, peak, updateCount, split }) {
   const kpis = [
-    { label: 'סה"כ צפיות', value: total.toLocaleString('en-US'), delta: `${counts.length} נקודות זמן` },
+    { label: 'סה"כ צפיות', value: total.toLocaleString('en-US'), delta: '' },
     { label: 'שיא צפיות בנקודת זמן', value: peak.toLocaleString('en-US'), delta: '' },
-    { label: 'עדכונים שפורסמו', value: String(updateIndices.length), delta: 'מסומנים בגרף' },
+    { label: 'עדכונים שפורסמו', value: String(updateCount), delta: 'מסומנים בגרף' },
   ];
-  if (beforeAfter) {
+  if (split) {
     kpis.push({
       label: 'צפיות אחרי/לפני העדכון האחרון',
-      value: `${beforeAfter.after.toLocaleString('en-US')} / ${beforeAfter.before.toLocaleString('en-US')}`,
-      delta: beforeAfter.after >= beforeAfter.before ? 'עלייה אחרי העדכון' : 'ירידה אחרי העדכון',
+      value: `${split.after.toLocaleString('en-US')} / ${split.before.toLocaleString('en-US')}`,
+      delta: split.after >= split.before ? 'יותר צפיות אחרי העדכון' : 'פחות צפיות אחרי העדכון',
     });
   }
   return kpis;
@@ -119,8 +118,15 @@ async function listUpdateTimes(articleId) {
 async function getArticleStats(articleId) {
   const [viewTimes, updateTimes] = await Promise.all([listViewTimes(articleId), listUpdateTimes(articleId)]);
   const series = bucketByTime(viewTimes, Date.now());
-  const updates = updateBuckets(updateTimes, series);
-  return { counts: series.counts, labels: series.labels, updates, kpis: buildKpis(series, updates) };
+  const updates = updateBuckets(updateTimes, series);        // bucket indices, for the graph markers
+
+  const total = viewTimes.length;                            // exact overall view count
+  const peak = series.counts.length ? Math.max(...series.counts) : 0;
+  // Before/after is measured against the real time of the last republish, not a bucket
+  const lastUpdateMs = updateTimes.length ? new Date(updateTimes[updateTimes.length - 1]).getTime() : null;
+  const split = lastUpdateMs != null ? splitByTime(viewTimes, lastUpdateMs) : null;
+
+  return { counts: series.counts, labels: series.labels, updates, kpis: buildKpis({ total, peak, updateCount: updateTimes.length, split }) };
 }
 
 module.exports = {
@@ -128,6 +134,7 @@ module.exports = {
   bucketByTime,
   bucketIndex,
   updateBuckets,
+  splitByTime,
   buildKpis,
   listPublishedArticles,
   listViewTimes,
