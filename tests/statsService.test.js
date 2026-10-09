@@ -82,22 +82,3 @@ describe('statsService.buildKpis', () => {
     assert.ok(!noSplit.some(k => k.label.includes('אחרי/לפני'))); // none without updates
   });
 });
-
-describe('article_view recording (analyticsService)', () => {
-  it('accepts and stores a valid article_view event (so each visit is counted)', async () => {
-    const UsageEvent = require('../models/UsageEvent');
-    const originalCreate = UsageEvent.create;
-    let created = null;
-    UsageEvent.create = async (doc) => { created = doc; return doc; };
-    try {
-      const { recordUsageEvent } = require('../services/analyticsService');
-      const ok = await recordUsageEvent({ type: 'article_view', source: 'article_page', articleId: 'aaaaaaaaaaaaaaaaaaaaaaaa' });
-      assert.strictEqual(ok, true);
-      assert.strictEqual(created.type, 'article_view');
-      assert.strictEqual(created.source, 'article_page');
-      assert.strictEqual(created.articleId, 'aaaaaaaaaaaaaaaaaaaaaaaa');
-    } finally {
-      UsageEvent.create = originalCreate;
-    }
-  });
-});

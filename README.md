@@ -320,7 +320,7 @@ Editor actions already call this shared service for edit, approve, return, and d
 | Event type | Infrastructure support | Current integration in this branch |
 | --- | --- | --- |
 | `login` | Supported | Recorded once after successful authentication and session save. Failed login does not record it. |
-| `article_view` | Supported | Recorded on every public article page view in `articleController.showArticle` (Member 5); drives the Impact Analytics graph. |
+| `article_view` | Supported | Recorded on every public article page view by the article page (Member 3); the Impact Analytics graph (Member 5) reads these events. |
 | `comment_created` | Supported | Not yet connected. |
 | `filter_used` | Supported | Not yet connected. |
 | `sort_used` | Supported | Not yet connected. |
@@ -384,7 +384,7 @@ package.json  Dependencies and npm commands
 npm test
 ```
 
-This runs `node --test "tests/**/*.test.js"`. The saved suite covers the weather service, weather widget browser behavior, and EJS rendering, and adds two suites for Member 5's work: `tests/articleValidator.test.js` (title/summary/body length limits and the editor save path rejecting an over-length title) and `tests/statsService.test.js` (Impact Analytics time-bucketing, update-point mapping, the exact before/after split, KPI building, and that a valid `article_view` event is accepted for storage). These use only Node's built-in `node:test`/`node:assert` with simple mocks, no database. It is not a complete Auth/User/Monitoring integration suite. The monitoring utilities above are separate manual checks; `monitor:test-log` writes to the configured database.
+This runs `node --test "tests/**/*.test.js"`. The saved suite covers the weather service, weather widget browser behavior, and EJS rendering, and adds two suites for Member 5's work: `tests/articleValidator.test.js` (title/summary/body length limits and the editor save path rejecting an over-length title) and `tests/statsService.test.js` (Impact Analytics time-bucketing, update-point mapping, the exact before/after split, and KPI building). These use only Node's built-in `node:test`/`node:assert` with simple mocks, no database. It is not a complete Auth/User/Monitoring integration suite. The monitoring utilities above are separate manual checks; `monitor:test-log` writes to the configured database.
 
 TODO – Each member should document their final automated/manual coverage and remaining integration checks without relying on a fixed test count.
 
@@ -455,7 +455,7 @@ Implemented components:
 
 - **Editor dashboard & review** (`/editor`): lists all articles with status-tab filtering and pagination. A logged-in non-editor gets a designed 403 page; the check is server-side (`routes/editorRoutes.js`).
 - **Review & actions** for a pending article (`services/editorService.js`, `controllers/editorController.js`, `views/review.ejs`): view the submitted content, edit it, approve & publish (the working copy becomes the public `liveVersion`), return it to the reporter with a required note, or delete it. The editor edit form is validated through the shared `validators/articleValidator.js`, so over-length title/summary/body produce the same Hebrew messages as the Reporter form. When an article is an update to a published one, the screen shows the current public version beside the pending one.
-- **Impact Analytics** (`/stats`, editor-only): the editor picks a published article from a scrollable dropdown (about ten visible, then scroll) and sees a graph of views over time with the update-publish points marked, headline KPIs (total views, peak, number of updates, and the exact views before/after the last update), and a live site-wide count of connected authenticated users. All numbers come from existing monitoring — views from `UsageEvent` `article_view` events (recorded on each article page view), update points from `OperationalLog` `article_approved` entries, and connected users from the session store. The monitoring infrastructure itself is not modified; the analytics only reads from it (and records the `article_view` event).
+- **Impact Analytics** (`/stats`, editor-only): the editor picks a published article from a scrollable dropdown (about ten visible, then scroll) and sees a graph of views over time with the update-publish points marked, headline KPIs (total views, peak, number of updates, and the exact views before/after the last update), and a live site-wide count of connected authenticated users. All numbers come from existing monitoring — views from `UsageEvent` `article_view` events (recorded by the article page, Member 3), update points from `OperationalLog` `article_approved` entries, and connected users from the session store. The monitoring infrastructure itself is not modified; the analytics only reads from it.
 - **Navigation** between the Editor area and the Analytics page, with role-aware nav links (Editor area and Statistics shown to editors only).
 
 Routes: `GET /editor`, `GET /editor/articles/:id/review`, `POST /editor/articles/:id/{edit,approve,return,delete}`, `GET /stats`.
