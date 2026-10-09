@@ -24,7 +24,7 @@ function feedFilters(req, res, next) {
     throw new HttpError(400, '"view" must be "unseen" or "all"');
   }
 
-  // The ids of the articles this device already opened (kept in the browser's localStorage by feed.js)
+  // The ids of the articles this device already opened (kept in the browser's localStorage by public/js/readArticles.js)
   let seenIds = [];
   if (view==='unseen' && seen) {
     if (typeof seen !== 'string') {

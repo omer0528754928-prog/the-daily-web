@@ -20,10 +20,13 @@ function buildFeedFilter(filters = {}) {
   const filter = { liveVersion: { $ne: null } };
 
   if (filters.category?.length) filter['liveVersion.category'] = filters.category;
-  // Matches the text anywhere in the title, so "משטרה" also finds "המשטרה"
+  // Matches the text anywhere in the title or the summary, so "משטרה" also finds "המשטרה"
   // (Hebrew glues ה/ו/ב/ל/מ/ש to the word, which a whole-word text index misses).
-  // MongoDB picks the cheaper index: the title index (see models/Article.js) or the sort's index.
-  if (filters.q?.length) filter['liveVersion.title'] = { $regex: escapeRegex(filters.q) };
+  // MongoDB picks the cheaper plan: the title + summary indexes (see models/Article.js) or the sort's index.
+  if (filters.q?.length) {
+    const text = { $regex: escapeRegex(filters.q) };
+    filter.$or = [{ 'liveVersion.title': text }, { 'liveVersion.summary': text }];
+  }
   // "unseen": leave out the articles this device already opened (Mongoose turns the id strings into ObjectIds)
   if (filters.view === 'unseen' && filters.seen?.length) filter._id = { $nin: filters.seen };
 

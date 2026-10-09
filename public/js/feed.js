@@ -1,13 +1,11 @@
 // Home page feed: infinite scroll (loads more cards from /api/feed near the bottom of the page)
 // and changing the category / search / sort / view without reloading the page.
-// It also remembers which articles were opened, for the "לא נצפו" view.
+// The "לא נצפו" view uses the read list from readArticles.js (the article page adds itself to it).
 // Everything is inside a function that runs right away, so its variables don't leak into the page.
 (() => {
   const LIMIT = 20; // cards per batch, same as the first batch the server renders
-  // The articles this device already opened, for the "לא נצפו" filter (kept in localStorage)
-  const READ_KEY = 'readArticles';
-  const MAX_READ = 200; // must match MAX_SEEN_IDS in middleware/feedFilters.js
-  const OBJECT_ID = /^[0-9a-f]{24}$/i; // same check as in middleware/feedFilters.js
+  // The articles this device already opened (see public/js/readArticles.js, loaded before this file)
+  const getReadIds = window.ReadArticles.getIds;
   // An empty element under the grid; when it gets near the screen, the next batch is shown
   const sentinel = document.querySelector('.refresh-sentinel');
   const template = document.getElementById('grid-card-template');
@@ -32,19 +30,6 @@
 
   // Same rule as isFiltered in views/home.ejs: any category, search, sort or the "unseen" view means a plain grid
   const isFiltered = (params) => ['category', 'q', 'sort'].some(key => params.get(key)) || params.get('view') === 'unseen';
-
-  // The read list from localStorage. Anything that isn't a list of real ids (an old value, an edit by hand)
-  // is dropped, so a bad value can't make every "unseen" request fail with a 400.
-  const getReadIds = () => {
-    let readArticles;
-    try {
-      readArticles = JSON.parse(localStorage.getItem(READ_KEY));
-    } catch {
-      readArticles = []; // storage blocked (e.g. private mode) or not valid JSON
-    }
-    if (!Array.isArray(readArticles)) return [];
-    return readArticles.filter(id => typeof id === 'string' && OBJECT_ID.test(id));
-  };
 
   // One batch of cards from the API, with the same filters as the current page
   const fetchBatch = async (skip = 0) => {
@@ -83,17 +68,6 @@
     newCard.href = `/articles/${card.id}`;
     newCard.dataset.id = card.id;
     return newCard;
-  };
-
-  // Puts an opened article first in the read list (moving it if it was already there) and keeps the newest MAX_READ
-  const markRead = (id) => {
-    const rest = getReadIds().filter(readId => readId !== id);
-    const updated = [id, ...rest].slice(0, MAX_READ);
-    try {
-      localStorage.setItem(READ_KEY, JSON.stringify(updated));
-    } catch {
-      // storage is blocked (e.g. private mode): the filter just won't know about this article
-    }
   };
 
   // Adds a batch of cards to the end of the grid, skipping articles that are already on the page
@@ -351,14 +325,6 @@
   // Back / forward buttons: the URL already changed to an earlier filter, show that filter's feed.
   // history 'none' because the browser already moved in the history, adding an entry would break it.
   window.addEventListener('popstate', () => applyFilters(new URLSearchParams(location.search), { history: 'none' }));
-
-  // Remember every article opened from this page (feed cards, the ticker, "most viewed").
-  // One listener on the document also covers cards added later by the infinite scroll.
-  // A middle-click fires "auxclick", not "click", so an article opened that way isn't remembered.
-  document.addEventListener('click', (event) => {
-    const link = event.target.closest('a[href^="/articles/"]');
-    if (link) markRead(link.getAttribute('href').split('/').pop());
-  });
 
   // The "unseen" view arrives from the server with an empty grid (it can't read localStorage).
   // Show the first batch right away instead of waiting for the observer: after F5 the browser

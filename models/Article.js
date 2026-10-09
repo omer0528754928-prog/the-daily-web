@@ -73,10 +73,12 @@ articleSchema.index({'views': -1 ,_id:-1});//sort by views then id
 articleSchema.index({'liveVersion.category': 1, 'liveVersion.publishedAt': -1 ,_id:-1});//sort by date then id 
 articleSchema.index({'liveVersion.category': 1, views: -1 ,_id:-1});//sort by views then id 
 
-//search by title
-// A plain index, not a text index: the feed searches part of a word (see services/feedService.js),
-// and MongoDB can scan these keys instead of reading every article
+//search by title or summary
+// Plain indexes, not a text index: the feed searches part of a word (see services/feedService.js),
+// and MongoDB can scan these keys instead of reading every article.
+// The search is an $or, so both fields need an index or MongoDB can't use either one.
 articleSchema.index({ 'liveVersion.title': 1 });
+articleSchema.index({ 'liveVersion.summary': 1 });
 
 
 

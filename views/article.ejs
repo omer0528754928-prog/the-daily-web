@@ -13,7 +13,8 @@
 
 <main class="container container--narrow page">
   <div class="article-layout">
-    <article class="card article">
+    <%# data-article-id: readArticles.js adds this article to the device's read list (the "לא נצפו" filter) %>
+    <article class="card article" data-article-id="<%= article.id %>">
       <nav class="breadcrumb" aria-label="מיקום באתר">
         <a href="/">ראשי</a> /
         <a href="/?category=<%= encodeURIComponent(article.category) %>"><%= article.category %></a>
@@ -103,6 +104,7 @@
   </div>
 </main>
 
+<script src="/js/readArticles.js" defer></script>
 <script src="/js/comments.js" defer></script>
 <script src="/js/weather.js" defer></script>
 <%- include('partials/footer') %>

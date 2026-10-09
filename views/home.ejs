@@ -12,7 +12,7 @@
   const sorts = [{ value: 'date', label: 'תאריך' }, { value: 'popular', label: 'פופולריות' }];
   const views = [{ value: 'all', label: 'הכל' }, { value: 'unseen', label: 'לא נצפו' }];
   
-  // "לא נצפו" hides the articles this device already opened (feed.js keeps that list in localStorage)
+  // "לא נצפו" hides the articles this device already opened (readArticles.js keeps that list in localStorage)
   const showViewFilter = true;
   // Builds a feed link that keeps the current filters and changes only the given ones
   const feedLink = (changes) => {
@@ -29,6 +29,7 @@
 %>
 <%- include('partials/head', { title: 'פיד הבית' }) %>
 <%- include('partials/header', { active: 'feed' }) %>
+<script src="/js/readArticles.js" defer></script>
 <script src="/js/feed.js" defer></script>
 <script src="/js/weather.js" defer></script>
 <main class="container page">
