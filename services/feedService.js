@@ -9,17 +9,33 @@ const SORTS = {
   popular: { views: -1, _id: -1 },
 };
 
+// Characters with a meaning in a regex (. * ( ...) are escaped, so the search is plain text
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Turns the filters from the home page into a MongoDB query
 function buildFeedFilter(filters = {}) {
+  // only articles an editor approved at least once (liveVersion is null before that)
   const filter = { liveVersion: { $ne: null } };
 
   if (filters.category?.length) filter['liveVersion.category'] = filters.category;
-  if (filters.q?.length) filter.$text = { $search: filters.q };
+  // Matches the text anywhere in the title or the summary, so "משטרה" also finds "המשטרה"
+  // (Hebrew glues ה/ו/ב/ל/מ/ש to the word, which a whole-word text index misses).
+  // 'i' ignores upper/lower case, so "ai" also finds "AI" and "Ai" (Hebrew has no case, so it isn't affected).
+  // MongoDB picks the cheaper plan: the title + summary indexes (see models/Article.js) or the sort's index.
+  if (filters.q?.length) {
+    const text = { $regex: escapeRegex(filters.q), $options: 'i' };
+    filter.$or = [{ 'liveVersion.title': text }, { 'liveVersion.summary': text }];
+  }
+  // "unseen": leave out the articles this device already opened (Mongoose turns the id strings into ObjectIds)
+  if (filters.view === 'unseen' && filters.seen?.length) filter._id = { $nin: filters.seen };
 
   return filter;
 }
 
 // One batch of published articles. Fetches one extra row to know if there are more.
+// Returns { items, hasMore }; skip is how many articles were already shown.
 const listFeed = async ({ filters = {}, sort = 'date', limit = 20, skip = 0 } = {}) => {
   let hasMore = false;
   const sortBy = SORTS[sort];
@@ -27,11 +43,13 @@ const listFeed = async ({ filters = {}, sort = 'date', limit = 20, skip = 0 } = 
   const items = await Article.find(buildFeedFilter(filters))
     .select(FEED_FIELDS)
     .sort(sortBy)
-    .populate('author', 'name')
+    .populate('author', 'name') // only the reporter's name, for the card
     .skip(skip)
     .limit(limit + 1)
-    .lean();
+    .lean(); // plain objects instead of Mongoose documents: faster, and we only read them
 
+  // The extra row came back, so there is at least one more article after this batch.
+  // It is dropped here; the next batch (skip + limit) starts with it.
   if (items.length > limit) {
     hasMore = true;
     items.pop();
@@ -41,6 +59,7 @@ const listFeed = async ({ filters = {}, sort = 'date', limit = 20, skip = 0 } = 
 };
 
 
+// The most viewed articles, for the "הנצפות ביותר" sidebar
 const listPopular=async(count=5)=>{
   return (await listFeed({ sort: 'popular', limit: count })).items;
 };

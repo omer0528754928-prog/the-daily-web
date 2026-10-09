@@ -1,3 +1,5 @@
+// The placeholder image for each category, used on feed cards of articles that have no image.
+// The keys must match config/categories.js
 const categoryToImages = {
   'חדשות': '/images/categories/news.svg',
   'פוליטיקה': '/images/categories/politics.svg',
