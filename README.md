@@ -4,7 +4,7 @@
 
 The Daily Web is a student news website with public news browsing, a Reporter workflow for preparing articles, and an Editor workflow for reviewing and publishing them. It includes user management, authentication, and shared MongoDB logging and analytics infrastructure.
 
-This README describes the code currently in this branch. The `/stats` page currently displays sample data; it is not yet a live monitoring dashboard. Team members should complete their sections below with details from the final merged implementation.
+This README describes the code currently in this branch. The `/stats` page is the editor-only Impact Analytics dashboard, driven by live monitoring data (run `npm run seed:stats` for demo history). Team members should complete their sections below with details from the final merged implementation.
 
 ## Main Technologies
 
@@ -86,7 +86,15 @@ npm run seed:users
 
 Both steps are needed to reproduce the supplied article-and-login demo on an empty database. Running only `seed:users` gives you accounts but no demo articles. Running only `seed` does not prepare usable demo passwords for newly created users.
 
-**Do not repeat the general seed on every startup.** It can overwrite existing demo article edits and workflow states. It also synchronizes indexes and removes the legacy top-level `publishedAt` field. See the script table below for details. Neither a Stats seed nor a monitoring test-log command is required to start the application.
+Optionally, to give the editor's Impact Analytics graph demo history, run `seed:stats` after the two commands above (it needs published articles to already exist):
+
+```sh
+npm run seed:stats
+```
+
+`seed:stats` generates demo `article_view` events over the last two weeks and update-publish points for the published articles, so the analytics graph has data to show. It is optional and not required to start the application. It clears and re-creates only its own demo view/approval records, so it is safe to re-run.
+
+**Do not repeat the general seed on every startup.** It can overwrite existing demo article edits and workflow states. It also synchronizes indexes and removes the legacy top-level `publishedAt` field. See the script table below for details. A monitoring test-log command is not required to start the application.
 
 ### 5. Start and open the application
 
@@ -111,7 +119,7 @@ Keep this terminal open and visit [http://localhost:3000](http://localhost:3000)
 - Log out, then use username `editor01` and initial password `editor01` for Editor access.
 - These passwords apply to freshly prepared accounts; rerunning `seed:users` does not reset an existing password.
 - The Weather Widget may display an unavailable message without a key. The rest of the site should still work.
-- The current Stats page contains sample data; a live analytics dashboard is not a prerequisite for this demo.
+- The Stats page (`/stats`) is the editor-only Impact Analytics dashboard; run `npm run seed:stats` to give its graph demo history.
 
 ### Later runs and stopping the server
 
@@ -197,11 +205,12 @@ Starts the same application with `nodemon`, which restarts the server after code
 | `npm run dev` | Start the server with automatic restarts during development. |
 | `npm run seed:users` | Write/update the seven predefined users. Preserve existing IDs and password hashes; skip soft-deleted users. Does not seed articles. |
 | `npm run seed` | Write/update demo users and articles from `articlesDB/articles.json`. Existing articles matched by `legacyId` can be overwritten, including content, status, timestamps, public versions, and parent links. Also synchronizes User/Article indexes and removes the old top-level `publishedAt` field. Use only on an intended demo database. |
+| `npm run seed:stats` | Write demo Impact Analytics data for published articles: `article_view` events over ~2 weeks and `article_approved` update points. Clears and re-creates only its own demo records, so it is safe to re-run. Optional and not required to start the app. |
 | `npm test` | Run the automated test suite using Node.js's built-in test runner. |
 | `npm run monitor:users` | Read-only count of distinct active authenticated users. Does not create collections/indexes through this command. |
 | `npm run monitor:test-log` | Intentionally add one manual test OperationalLog document on each successful run. Prints `Log saved: true` or a failure result. |
 
-`seed:stats` is **not available in this branch**. Do not run it based on documentation from another branch. The general seed does not replace `seed:users` for preparing password hashes.
+The general seed does not replace `seed:users` for preparing password hashes.
 
 # Demo Users
 
@@ -225,7 +234,7 @@ For existing active users, the script updates the demo name/role while preservin
 
 ## Guest
 
-A guest is an unauthenticated visitor, not a stored User role. Public routes allow reading the feed and published articles and submitting comments. In the current code, `/stats` is also a public sample-data page.
+A guest is an unauthenticated visitor, not a stored User role. Public routes allow reading the feed and published articles and submitting comments. The Impact Analytics page (`/stats`) is Editor-only and is not open to guests.
 
 ## Reporter
 
@@ -233,7 +242,7 @@ An authenticated Reporter can access the Reporter area and its API. Ownership an
 
 ## Editor
 
-An authenticated Editor can access the Editor review/actions and User CRUD API. Reporter routes currently also allow Editors, while article ownership checks still apply. Detailed review/publishing behavior belongs to Member 5.
+An authenticated Editor can access the Editor review/actions, the editor-only Impact Analytics page (`/stats`), and the User CRUD API. In the Editor area an editor sees all articles, filters by status, and for a pending article can view, edit, approve & publish, return to the reporter with a note, or delete it; when an article is an update to a published one, the review screen shows the current public version beside the pending one. Reporter routes currently also allow Editors, while article ownership checks still apply. Detailed review/publishing behavior belongs to Member 5.
 
 TODO – Final permissions review after all team features are integrated.
 
@@ -290,7 +299,7 @@ The flow is `usersRoutes -> usersController -> userService -> userValidator/User
 
 Critical User, Reporter, and Editor operations are protected on the server, independently of navigation visibility. Editor routes currently use their own `requireEditorPage` guard to render the designed 403 page. `loadSessionUser` runs before these routes. The legacy `devAuth.js` file is not mounted in `app.js`.
 
-TODO – Final permissions review after all team features are integrated, including the currently public sample Stats route.
+TODO – Final permissions review after all team features are integrated. The Stats route uses the same editor-only server guard as the Editor area.
 
 # Monitoring and Logging
 
@@ -311,7 +320,7 @@ Editor actions already call this shared service for edit, approve, return, and d
 | Event type | Infrastructure support | Current integration in this branch |
 | --- | --- | --- |
 | `login` | Supported | Recorded once after successful authentication and session save. Failed login does not record it. |
-| `article_view` | Supported | Not yet connected to the article controller. |
+| `article_view` | Supported | Recorded on every public article page view in `articleController.showArticle` (Member 5); drives the Impact Analytics graph. |
 | `comment_created` | Supported | Not yet connected. |
 | `filter_used` | Supported | Not yet connected. |
 | `sort_used` | Supported | Not yet connected. |
@@ -375,7 +384,7 @@ package.json  Dependencies and npm commands
 npm test
 ```
 
-This runs `node --test "tests/**/*.test.js"`. The currently saved suite covers the weather service, weather widget browser behavior, and EJS rendering, using test doubles where needed. It is not a complete Auth/User/Monitoring integration suite. The monitoring utilities above are separate manual checks; `monitor:test-log` writes to the configured database.
+This runs `node --test "tests/**/*.test.js"`. The saved suite covers the weather service, weather widget browser behavior, and EJS rendering, and adds two suites for Member 5's work: `tests/articleValidator.test.js` (title/summary/body length limits and the editor save path rejecting an over-length title) and `tests/statsService.test.js` (Impact Analytics time-bucketing, update-point mapping, the exact before/after split, KPI building, and that a valid `article_view` event is accepted for storage). These use only Node's built-in `node:test`/`node:assert` with simple mocks, no database. It is not a complete Auth/User/Monitoring integration suite. The monitoring utilities above are separate manual checks; `monitor:test-log` writes to the configured database.
 
 TODO – Each member should document their final automated/manual coverage and remaining integration checks without relying on a fixed test count.
 
@@ -420,9 +429,18 @@ Document the dashboard, article creation/editing, autosave, validation, statuses
 
 ## Member 5 – Editor Area & Impact Analytics
 
-> TODO – Member 5: Add final Editor Area & Analytics documentation.
+Implemented components:
 
-Document the dashboard/review queue, pending-article editing, approve/publish, return to Reporter, deletion, permissions, Impact Analytics, article selector, view analytics, monitoring data sources, graphs/KPIs, routes/tests, and limitations. Clearly distinguish the current sample Stats page from any final live-data implementation.
+- **Editor dashboard & review** (`/editor`): lists all articles with status-tab filtering and pagination. A logged-in non-editor gets a designed 403 page; the check is server-side (`routes/editorRoutes.js`).
+- **Review & actions** for a pending article (`services/editorService.js`, `controllers/editorController.js`, `views/review.ejs`): view the submitted content, edit it, approve & publish (the working copy becomes the public `liveVersion`), return it to the reporter with a required note, or delete it. The editor edit form is validated through the shared `validators/articleValidator.js`, so over-length title/summary/body produce the same Hebrew messages as the Reporter form. When an article is an update to a published one, the screen shows the current public version beside the pending one.
+- **Impact Analytics** (`/stats`, editor-only): the editor picks a published article from a scrollable dropdown (about ten visible, then scroll) and sees a graph of views over time with the update-publish points marked, headline KPIs (total views, peak, number of updates, and the exact views before/after the last update), and a live site-wide count of connected authenticated users. All numbers come from existing monitoring — views from `UsageEvent` `article_view` events (recorded on each article page view), update points from `OperationalLog` `article_approved` entries, and connected users from the session store. The monitoring infrastructure itself is not modified; the analytics only reads from it (and records the `article_view` event).
+- **Navigation** between the Editor area and the Analytics page, with role-aware nav links (Editor area and Statistics shown to editors only).
+
+Routes: `GET /editor`, `GET /editor/articles/:id/review`, `POST /editor/articles/:id/{edit,approve,return,delete}`, `GET /stats`.
+
+Key files: `services/editorService.js`, `services/statsService.js`, `controllers/editorController.js`, `controllers/statsController.js`, `routes/editorRoutes.js`, `routes/statsRoutes.js`, `views/editor.ejs`, `views/review.ejs`, `views/stats.ejs`.
+
+Tests: `tests/articleValidator.test.js`, `tests/statsService.test.js`. Demo data: `npm run seed:stats`. No extra environment variables.
 
 # Adding Your Team Section
 
@@ -448,7 +466,7 @@ The current code includes shared User CRUD, authentication and MongoDB sessions,
 - TODO – Final permissions review after all team features are integrated.
 - TODO – Team members' final feature documentation and end-to-end acceptance checks.
 - TODO – Screen-owned usage-event integrations beyond login.
-- TODO – Confirm the final live Stats/Impact Analytics integration; this branch still uses sample data.
+- Impact Analytics (`/stats`) now uses live data from monitoring and is editor-only; run `npm run seed:stats` for demo history. (Member 5)
 - Needs confirmation – Final responsive/browser testing and overall release readiness are not established by the repository alone.
 
 # Security Notes
