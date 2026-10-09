@@ -28,7 +28,7 @@
   const moreStories = isFiltered ? articles : articles.slice(4);
 %>
 <%- include('partials/head', { title: 'פיד הבית' }) %>
-<%- include('partials/header', { active: 'feed' }) %>
+<%- include('partials/header', { active: 'feed', showCategoryBar: true }) %>
 <script src="/js/readArticles.js" defer></script>
 <script src="/js/feed.js" defer></script>
 <script src="/js/weather.js" defer></script>
