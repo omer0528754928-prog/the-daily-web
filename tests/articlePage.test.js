@@ -4,7 +4,7 @@
 // JavaScript, the 3-comments-a-minute limit, editor moderation and view counting.
 // Run with: npm test
 
-const { describe, it, before, after, beforeEach } = require('node:test');
+const { describe, it, before, after, beforeEach, mock } = require('node:test');
 const assert = require('node:assert');
 const path = require('node:path');
 const mongoose = require('mongoose');
@@ -230,6 +230,25 @@ describe('spam limit: 3 comments a minute per device', () => {
     for (let i = 1; i <= 3; i++) await postApi(`תגובה ${i}`);
     const res = await request(`/api/articles/${OTHER_ID}/comments`, { method: 'POST', json: { text: 'כתבה אחרת' } });
     assert.strictEqual(res.status, 429);
+  });
+
+  it('comments sent at the same moment cannot slip past the limit', async () => {
+    const results = await Promise.all([1, 2, 3, 4, 5].map(i => postApi(`במקביל ${i}`)));
+    const statuses = results.map(res => res.status).sort();
+    assert.deepStrictEqual(statuses, [201, 201, 201, 429, 429]);
+    assert.strictEqual(fake.store.length, 3);
+  });
+
+  it('a minute after the first comment, the device may comment again', async () => {
+    mock.timers.enable({ apis: ['Date'], now: Date.now() });
+    try {
+      for (let i = 1; i <= 3; i++) await postApi(`תגובה ${i}`);
+      assert.strictEqual((await postApi('מוקדם מדי')).status, 429);
+      mock.timers.tick(61 * 1000);
+      assert.strictEqual((await postApi('אחרי דקה')).status, 201);
+    } finally {
+      mock.timers.reset();
+    }
   });
 
   it('reading comments is never limited', async () => {

@@ -13,7 +13,6 @@ This README describes the code currently in this branch. The `/stats` page curre
 - EJS, HTML, CSS, and browser JavaScript
 - `express-session` and `connect-mongo`
 - `bcrypt` for password hashing
-- `express-rate-limit` for the comment spam limit
 - `nodemon` for development
 - Node.js built-in test runner (`node:test`)
 
@@ -426,7 +425,7 @@ The public article page and its comments, end to end (model → routes → contr
 - Guests comment without logging in. The server validates every comment (`validators/commentValidator.js`) and answers with Hebrew messages; checks in the browser are only a convenience.
 - Without JavaScript: the form posts to the server, which redirects back to the article (Post/Redirect/Get, so a refresh does not post twice). With JavaScript (`public/js/comments.js`): a new comment appears at the top right away, and "טעינת תגובות נוספות" loads older ones.
 - User text is escaped in the EJS view (`<%= %>`) and inserted with `textContent` in the browser, so a comment can never run as HTML.
-- **Spam limit** (`middleware/commentRateLimit.js`, express-rate-limit): at most 3 saved comments a minute per device (IP address), shared by the form and the API. Over the limit the server answers 429 with "חרגת מהמגבלה — נסו שוב בעוד דקה". Comments rejected by validation do not count.
+- **Spam limit** (`middleware/commentRateLimit.js`, written in the project, no external library): at most 3 saved comments a minute per device (IP address), shared by the form and the API. The server keeps, per IP, the times of the comments from the last minute and refuses a 4th. Over the limit the server answers 429 with "חרגת מהמגבלה — נסו שוב בעוד דקה". Comments rejected by validation do not count.
 - **Editors** can edit and delete comments on the article page. The API checks the editor role on the server (`requireRole('editor')`); hiding the buttons from other readers is only a convenience. Every edit and delete is written to the operational log (ids only, never the comment text).
 - `commentService.deleteByArticle(articleId)` deletes all the comments of an article, for when the article itself is deleted.
 
