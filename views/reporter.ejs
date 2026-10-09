@@ -79,7 +79,7 @@
               <% if (filters) { %>
                 <details class="filter"<%= filters['published'].active ? ' data-active' : '' %>>
                   <summary>פורסם</summary>
-                  <form action="/reporter" method="get" class="filter-menu">
+                  <form action="/reporter" method="get" class="filter-menu" data-date-range>
                     <% filters['published'].hidden.forEach(field => { %>
                       <input type="hidden" name="<%= field.name %>" value="<%= field.value %>">
                     <% }) %>
@@ -89,6 +89,7 @@
                     <label class="filter-date">עד תאריך
                       <input type="date" name="publishedTo" value="<%= filters['published'].to %>">
                     </label>
+                    <p class="filter-problem" data-range-problem hidden>תאריך היעד מוקדם מתאריך ההתחלה</p>
                     <div class="filter-menu__actions">
                       <button type="submit" class="btn btn-primary btn-xs">סינון</button>
                       <a href="/reporter" class="btn btn-outline btn-xs">נקה</a>
@@ -223,4 +224,5 @@
   </section>
 </main>
 
+<script src="/js/dateRangeFilter.js" defer></script>
 <%- include('partials/footer') %>
