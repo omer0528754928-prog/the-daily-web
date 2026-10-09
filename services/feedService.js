@@ -9,14 +9,21 @@ const SORTS = {
   popular: { views: -1, _id: -1 },
 };
 
+// Characters with a meaning in a regex (. * ( ...) are escaped, so the search is plain text
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Turns the filters from the home page into a MongoDB query
 function buildFeedFilter(filters = {}) {
   // only articles an editor approved at least once (liveVersion is null before that)
   const filter = { liveVersion: { $ne: null } };
 
   if (filters.category?.length) filter['liveVersion.category'] = filters.category;
-  // $text searches the text index on liveVersion.title (see models/Article.js)
-  if (filters.q?.length) filter.$text = { $search: filters.q };
+  // Matches the text anywhere in the title, so "משטרה" also finds "המשטרה"
+  // (Hebrew glues ה/ו/ב/ל/מ/ש to the word, which a whole-word text index misses).
+  // MongoDB picks the cheaper index: the title index (see models/Article.js) or the sort's index.
+  if (filters.q?.length) filter['liveVersion.title'] = { $regex: escapeRegex(filters.q) };
   // "unseen": leave out the articles this device already opened (Mongoose turns the id strings into ObjectIds)
   if (filters.view === 'unseen' && filters.seen?.length) filter._id = { $nin: filters.seen };
 

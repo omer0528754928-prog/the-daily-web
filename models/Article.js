@@ -74,8 +74,9 @@ articleSchema.index({'liveVersion.category': 1, 'liveVersion.publishedAt': -1 ,_
 articleSchema.index({'liveVersion.category': 1, views: -1 ,_id:-1});//sort by views then id 
 
 //search by title
-// default_language 'none': MongoDB has no Hebrew rules, so match whole words without stemming or stop words
-articleSchema.index({ 'liveVersion.title': 'text' }, { default_language: 'none' });
+// A plain index, not a text index: the feed searches part of a word (see services/feedService.js),
+// and MongoDB can scan these keys instead of reading every article
+articleSchema.index({ 'liveVersion.title': 1 });
 
 
 
