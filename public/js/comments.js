@@ -10,12 +10,18 @@
   const submitButton = form.querySelector('button[type="submit"]');
   const countLabel = section.querySelector('[data-comment-count]');
   const apiUrl = `/api/articles/${section.dataset.articleId}/comments`;
+  // Set by the server for editors only (the API checks the role again on every request)
+  const canModerate = section.dataset.canModerate === 'true';
+  const maxText = form.elements.text.maxLength;
 
   const PAGE_SIZE = 20;
   const EMPTY_TEXT = 'יש לכתוב תגובה לפני השליחה';
   const NOT_FOUND = 'הכתבה כבר אינה זמינה';
   const GENERAL_PROBLEM = 'אירעה שגיאה. נסו שוב בעוד רגע';
   const NETWORK_PROBLEM = 'אין חיבור לשרת. בדקו את החיבור לאינטרנט ונסו שוב';
+  const DELETE_QUESTION = 'למחוק את התגובה? אי אפשר לבטל את המחיקה';
+  const NO_PERMISSION = 'אין לך הרשאה לפעולה הזו. ייתכן שצריך להתחבר מחדש';
+  const ALREADY_DELETED = 'התגובה כבר נמחקה';
 
   let total = Number(countLabel.textContent) || 0;
 
@@ -59,6 +65,7 @@
     content.append(head, text);
 
     item.append(avatar, content);
+    addModerationButtons(item);
     return item;
   }
 
@@ -122,6 +129,143 @@
       submitButton.disabled = false;
     }
   });
+
+  // ----- Editors: edit and delete comments -----
+
+  function makeButton(label, style, type = 'button') {
+    const button = document.createElement('button');
+    button.type = type;
+    button.className = `btn ${style} btn-xs`;
+    button.textContent = label;
+    return button;
+  }
+
+  // Adds "עריכה" and "מחיקה" to one comment, only for editors
+  function addModerationButtons(item) {
+    if (!canModerate || item.querySelector('.comment__actions')) return;
+    const edit = makeButton('עריכה', 'btn-outline');
+    edit.dataset.commentAction = 'edit';
+    const remove = makeButton('מחיקה', 'btn-danger');
+    remove.dataset.commentAction = 'delete';
+
+    const actions = document.createElement('span');
+    actions.className = 'comment__actions';
+    actions.append(edit, remove);
+    item.querySelector('.comment__head').append(actions);
+  }
+
+  // A red message inside one comment (replaces an earlier one)
+  function showItemProblem(container, message) {
+    container.querySelectorAll('.alert-error').forEach(alert => alert.remove());
+    const alert = document.createElement('span');
+    alert.className = 'alert alert-error';
+    alert.setAttribute('role', 'alert');
+    alert.textContent = message;
+    container.append(alert);
+  }
+
+  function moderationProblem(res, body) {
+    if (Array.isArray(body.messages) && body.messages.length) return body.messages[0];
+    if (res.status === 401 || res.status === 403) return NO_PERMISSION;
+    return GENERAL_PROBLEM;
+  }
+
+  function commentUrl(item) {
+    return `/api/comments/${item.dataset.commentId}`;
+  }
+
+  // Swaps the comment text for a small form with the text, "שמירה" and "ביטול"
+  function startEditing(item) {
+    if (item.querySelector('.comment-form')) return; // already open
+    const textLine = item.querySelector('p');
+
+    const textarea = document.createElement('textarea');
+    textarea.name = 'text';
+    textarea.required = true;
+    textarea.maxLength = maxText;
+    textarea.value = textLine.textContent;
+
+    const save = makeButton('שמירה', 'btn-primary', 'submit');
+    const cancel = makeButton('ביטול', 'btn-muted');
+    const row = document.createElement('div');
+    row.className = 'comment-form__row';
+    row.append(save, cancel);
+
+    const editForm = document.createElement('form');
+    editForm.className = 'comment-form';
+    editForm.append(textarea, row);
+
+    textLine.hidden = true;
+    textLine.after(editForm);
+    textarea.focus();
+
+    const close = () => {
+      editForm.remove();
+      textLine.hidden = false;
+    };
+    cancel.addEventListener('click', close);
+
+    editForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const text = textarea.value.trim();
+      if (!text) {
+        showItemProblem(row, EMPTY_TEXT);
+        return;
+      }
+
+      save.disabled = true;
+      try {
+        const res = await fetch(commentUrl(item), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showItemProblem(row, res.status === 404 ? ALREADY_DELETED : moderationProblem(res, body));
+          return;
+        }
+        textLine.textContent = body.data.text;
+        close();
+      } catch {
+        showItemProblem(row, NETWORK_PROBLEM);
+      } finally {
+        save.disabled = false;
+      }
+    });
+  }
+
+  async function deleteComment(item, button) {
+    if (!window.confirm(DELETE_QUESTION)) return;
+
+    button.disabled = true;
+    try {
+      const res = await fetch(commentUrl(item), { method: 'DELETE', headers: { Accept: 'application/json' } });
+      // 404: another editor already deleted it, so it goes away here too
+      if (res.status !== 204 && res.status !== 404) {
+        const body = await res.json().catch(() => ({}));
+        showItemProblem(item.lastElementChild, moderationProblem(res, body));
+        return;
+      }
+      item.remove();
+      setTotal(Math.max(total - 1, 0));
+    } catch {
+      showItemProblem(item.lastElementChild, NETWORK_PROBLEM);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  // One listener for every comment, including ones added later by "load more" or a new post
+  section.addEventListener('click', event => {
+    const button = event.target.closest('[data-comment-action]');
+    if (!button) return;
+    const item = button.closest('.comment');
+    if (button.dataset.commentAction === 'edit') startEditing(item);
+    if (button.dataset.commentAction === 'delete') deleteComment(item, button);
+  });
+
+  section.querySelectorAll('.comment').forEach(addModerationButtons);
 
   // Without JavaScript the page shows a line like "מוצגות 20 התגובות האחרונות מתוך 25".
   // With JavaScript that line becomes a button that loads the next comments.

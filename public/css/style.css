@@ -408,12 +408,14 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
 .alert-success { background: var(--green-soft); color: var(--green-text); }
 .alert-warning { background: var(--orange-soft); color: var(--orange); }
 
+/* A generic profile picture (users have no photo yet). Set in CSS, so it stays decoration:
+   screen readers skip it and read the name next to it. */
 .avatar {
   width: 34px;
   height: 34px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: #cedff9;
+  background: #ebebeb url('/images/avatar-placeholder.jpg') center / cover no-repeat;
 }
 
 .section-title { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
@@ -696,6 +698,39 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
   background-color: #dde9f9;
   background-image: repeating-linear-gradient(135deg, #d1dff2 0 12px, #e2ecf9 12px 24px);
 }
+/* The back button. Under the sticky top bar (z-index 50) and popups (100).
+   Narrow screens have no free space beside the card, so there it floats at the bottom of
+   the screen and settles at the end of the card (order: 1 moves it after the comments). */
+.article__back-bar {
+  order: 1;
+  position: sticky;
+  bottom: 16px;
+  z-index: 40;
+  align-self: flex-start;
+}
+.article__back { box-shadow: 0 12px 28px #0d1b2f26; }
+
+/* Wide screens: it floats in the empty gray margin to the right of the card, at the top,
+   and stays there (under the top bar) while the page scrolls */
+@media (min-width: 1500px) {
+  .article__back-bar {
+    order: 0;
+    top: 88px;            /* the sticky top bar is 72px high on wide screens */
+    bottom: auto;
+    align-self: stretch;
+    height: 0;            /* takes no room inside the card */
+    margin-bottom: -16px; /* cancels the card's 16px gap after it */
+  }
+  .article__back {
+    position: absolute;
+    top: 0;
+    /* 100% = the card's content width; 28px = the card's side padding; 16px = space from the card.
+       In RTL inline-end is the left side, so this puts the button just past the card's right edge. */
+    inset-inline-end: calc(100% + 28px + 16px);
+  }
+}
+/* Editor buttons on a comment, at the end of its name and time line */
+.comment__actions { display: flex; gap: 6px; margin-inline-start: auto; }
 /* A real uploaded image fills the same box as the placeholder without stretching */
 img.article__img { width: 100%; object-fit: cover; }
 .article__body { display: flex; flex-direction: column; gap: 16px; font-size: 17px; line-height: 1.85; color: var(--text-body); }
@@ -743,7 +778,6 @@ img.article__img { width: 100%; object-fit: cover; }
   border-radius: 12px;
   padding: 14px;
 }
-.comment .avatar { background: #d9e6f9; }
 .comment__head { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; font-size: 14px; }
 .comment p { margin-top: 5px; font-size: 14px; line-height: 1.65; color: #343b45; }
 
