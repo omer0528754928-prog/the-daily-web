@@ -9,7 +9,7 @@
   const weather = locals.weather || null;
 %>
 <%- include('partials/head', { title: article.title }) %>
-<%- include('partials/header') %>
+<%- include('partials/header', { showCategoryBar: true }) %>
 
 <main class="container container--narrow page">
   <div class="article-layout">
