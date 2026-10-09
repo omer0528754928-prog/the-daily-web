@@ -35,16 +35,34 @@
   </a>
   <span class="topbar__sep"></span>
   <span class="topbar__date"><%= today %></span>
-  <nav class="topbar__nav">
-    <% navLinks.forEach(link => { %>
-      <a href="<%= link.href %>" class="topbar__link <%= active === link.key ? 'is-active' : '' %>"><%= link.label %></a>
-    <% }) %>
-  </nav>
+  <%# Shown only on mobile, where it opens and closes the menu below it (public/js/header.js) %>
+  <button type="button" class="topbar__toggle" aria-label="תפריט" aria-expanded="false" aria-controls="topbar-menu">
+    <svg class="topbar__toggle-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <line x1="4" y1="7" x2="20" y2="7"></line>
+      <line x1="4" y1="12" x2="20" y2="12"></line>
+      <line x1="4" y1="17" x2="20" y2="17"></line>
+    </svg>
+    <svg class="topbar__toggle-close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+    </svg>
+  </button>
+  <div class="topbar__menu" id="topbar-menu">
+    <nav class="topbar__nav">
+      <% navLinks.forEach(link => { %>
+        <a href="<%= link.href %>" class="topbar__link <%= active === link.key ? 'is-active' : '' %>"><%= link.label %></a>
+      <% }) %>
+    </nav>
+    <% if (locals.currentUser) { %>
+      <div class="topbar__account">
+        <span>שלום, <%= currentUser.name %></span>
+        <button type="button" class="topbar__login" onclick="document.getElementById('logout-dialog').showModal()">התנתקות</button>
+      </div>
+    <% } else { %>
+      <a href="/login" class="topbar__login">התחברות</a>
+    <% } %>
+  </div>
   <% if (locals.currentUser) { %>
-    <div class="topbar__account">
-      <span>שלום, <%= currentUser.name %></span>
-      <button type="button" class="topbar__login" onclick="document.getElementById('logout-dialog').showModal()">התנתקות</button>
-    </div>
     <dialog id="logout-dialog" class="logout-dialog" dir="rtl" aria-labelledby="logout-question">
       <p id="logout-question">האם אתה בטוח שברצונך להתנתק?</p>
       <div class="logout-dialog__actions">
@@ -67,8 +85,6 @@
         }
       }, 4 * 60 * 1000);
     </script>
-  <% } else { %>
-    <a href="/login" class="topbar__login">התחברות</a>
   <% } %>
 </div>
 

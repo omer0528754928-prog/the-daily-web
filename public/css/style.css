@@ -151,6 +151,33 @@ input, textarea, select, button { font-family: inherit; }
 }
 .topbar__sep { width: 1px; height: 26px; background: #ffffff33; }
 .topbar__date { font-size: 12.5px; opacity: 0.75; white-space: nowrap; }
+/* The nav links + login; on mobile it collapses behind .topbar__toggle */
+.topbar__menu {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+/* Menu button, shown only on mobile (see "Narrow screens") */
+.topbar__toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: auto;
+  padding: 0;
+  border: 1px solid #ffffff59;
+  border-radius: 3px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.topbar__toggle svg { display: block; }
+/* Hamburger while closed, X while open */
+.topbar:not(.is-open) .topbar__toggle-close,
+.topbar.is-open .topbar__toggle-open { display: none; }
 .topbar__nav { display: flex; flex-wrap: wrap; gap: 6px; }
 .topbar__link {
   border-radius: 3px;
@@ -1047,6 +1074,28 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
   .article__img { height: 220px; }
   .search { width: 100%; }
   .topbar__sep, .topbar__date { display: none; }
+
+  /* Top bar: only the logo and the menu button; the button opens the links and login as a list */
+  .topbar.is-collapsible .topbar__toggle { display: flex; }
+  .topbar.is-collapsible .topbar__menu { display: none; }
+  .topbar.is-open .topbar__menu {
+    display: flex;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 4px;
+  }
+  .topbar.is-open .topbar__nav { flex-direction: column; }
+  .topbar.is-open .topbar__link { padding: 12px 14px; font-size: 15px; }
+  .topbar.is-open .topbar__login { margin: 0; padding: 12px 16px; text-align: center; }
+  .topbar.is-open .topbar__account { margin: 0; justify-content: space-between; }
+
+  /* Search: only the button, beside the categories; pressing it opens the box on its own row */
+  .site-header .cat-nav { flex: 1 1 0; min-width: 0; }
+  .search.is-collapsible { width: auto; align-self: flex-start; }
+  .search.is-collapsible:not(.is-open) input { display: none; }
+  .search.is-open { width: 100%; }
 }
 
 
