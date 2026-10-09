@@ -969,7 +969,7 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
 .details span { font-size: 11.5px; color: var(--text-muted); }
 .details strong { font-size: 13.5px; font-weight: 500; }
 
-.review__title { font-size: 20px; font-weight: 700; line-height: 1.35; }
+.review__title { font-size: 20px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; word-break: break-word; }
 
 
 /* 12. Editor
@@ -978,7 +978,7 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
 .queue { display: flex; flex-direction: column; gap: 12px; }
 .queue-item { padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .queue-item__info { display: flex; flex-direction: column; gap: 5px; flex: 1 1 240px; min-width: 0; }
-.queue-item__title { font-size: 16px; font-weight: 600; line-height: 1.4; }
+.queue-item__title { font-size: 16px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word; }
 
 /* Side-by-side versions: what the public sees vs. waiting for approval */
 .compare {
@@ -987,7 +987,7 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
   gap: 16px;
 }
 .compare > * { flex: 1 1 260px; min-width: 0; }
-.compare__col { border: 1px solid #e3e8f0; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.compare__col { border: 1px solid #e3e8f0; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; overflow-wrap: anywhere; word-break: break-word; }
 .compare__col p { font-size: 14px; line-height: 1.75; }
 .compare__col--live { background: #f6f9fd; color: #343b45; }
 .compare__col--pending { background: #edf6ff; border-color: #b6d0f6; color: #242e3d; }
