@@ -27,7 +27,11 @@
       });
 
   const pageTitle = isNew ? 'כתבה חדשה' : isView ? 'צפייה בפרטי הכתבה' : 'עריכת כתבה';
-  const subtitle = isNew ? 'טיוטה חדשה' : isView ? 'תצוגה בלבד — לא ניתן לערוך כתבה שממתינה לאישור עורך' : 'טיוטה';
+  // A published article being edited is an update to a live article, not a draft
+  const subtitle = isNew ? 'טיוטה חדשה'
+    : isView ? 'תצוגה בלבד — לא ניתן לערוך כתבה שממתינה לאישור עורך'
+    : article.isPublished ? 'עדכון לכתבה שפורסמה'
+    : 'טיוטה';
   const formAction = isNew ? '/reporter/articles' : `/reporter/articles/${article.id}`;
 %>
 <%- include('partials/head', { title: pageTitle }) %>

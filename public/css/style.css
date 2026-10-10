@@ -435,12 +435,14 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
 .alert-success { background: var(--green-soft); color: var(--green-text); }
 .alert-warning { background: var(--orange-soft); color: var(--orange); }
 
+/* A generic profile picture (users have no photo yet). Set in CSS, so it stays decoration:
+   screen readers skip it and read the name next to it. */
 .avatar {
   width: 34px;
   height: 34px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: #cedff9;
+  background: #ebebeb url('/images/avatar-placeholder.jpg') center / cover no-repeat;
 }
 
 .section-title { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
@@ -693,8 +695,8 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
 
 .article { border-radius: var(--radius-lg); padding: 26px 28px 32px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .breadcrumb { font-size: 13px; color: var(--text-muted); }
-.article__title { font-size: 36px; line-height: 1.18; font-weight: 800; text-wrap: pretty; }
-.article__summary { font-size: 18px; line-height: 1.6; color: var(--text-soft); font-weight: 500; text-wrap: pretty; }
+.article__title { font-size: 36px; line-height: 1.18; font-weight: 800; text-wrap: pretty; overflow-wrap: anywhere; word-break: break-word; }
+.article__summary { font-size: 18px; line-height: 1.6; color: var(--text-soft); font-weight: 500; text-wrap: pretty; overflow-wrap: anywhere; word-break: break-word; }
 .byline {
   display: flex;
   flex-wrap: wrap;
@@ -713,6 +715,39 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
   background-color: #dde9f9;
   background-image: repeating-linear-gradient(135deg, #d1dff2 0 12px, #e2ecf9 12px 24px);
 }
+/* The back button. Under the sticky top bar (z-index 50) and popups (100).
+   Narrow screens have no free space beside the card, so there it floats at the bottom of
+   the screen and settles at the end of the card (order: 1 moves it after the comments). */
+.article__back-bar {
+  order: 1;
+  position: sticky;
+  bottom: 16px;
+  z-index: 40;
+  align-self: flex-start;
+}
+.article__back { box-shadow: 0 12px 28px #0d1b2f26; }
+
+/* Wide screens: it floats in the empty gray margin to the right of the card, at the top,
+   and stays there (under the top bar) while the page scrolls */
+@media (min-width: 1500px) {
+  .article__back-bar {
+    order: 0;
+    top: 88px;            /* the sticky top bar is 72px high on wide screens */
+    bottom: auto;
+    align-self: stretch;
+    height: 0;            /* takes no room inside the card */
+    margin-bottom: -16px; /* cancels the card's 16px gap after it */
+  }
+  .article__back {
+    position: absolute;
+    top: 0;
+    /* 100% = the card's content width; 28px = the card's side padding; 16px = space from the card.
+       In RTL inline-end is the left side, so this puts the button just past the card's right edge. */
+    inset-inline-end: calc(100% + 28px + 16px);
+  }
+}
+/* Editor buttons on a comment, at the end of its name and time line */
+.comment__actions { display: flex; gap: 6px; margin-inline-start: auto; }
 /* A real uploaded image fills the same box as the placeholder without stretching */
 img.article__img { width: 100%; object-fit: cover; }
 .article__body { display: flex; flex-direction: column; gap: 16px; font-size: 17px; line-height: 1.85; color: var(--text-body); }
@@ -760,7 +795,6 @@ img.article__img { width: 100%; object-fit: cover; }
   border-radius: 12px;
   padding: 14px;
 }
-.comment .avatar { background: #d9e6f9; }
 .comment__head { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; font-size: 14px; }
 .comment p { margin-top: 5px; font-size: 14px; line-height: 1.65; color: #343b45; }
 
@@ -844,7 +878,7 @@ img.article__img { width: 100%; object-fit: cover; }
 .table td { padding: 11px 8px; color: var(--text-soft); line-height: 1.45; vertical-align: middle; }
 .table tbody tr { border-bottom: 1px solid #ebeff4; }
 .table tbody tr:hover { background: #f8fafd; }
-.table__title { font-weight: 600; color: var(--text); min-width: 200px; }
+.table__title { font-weight: 600; color: var(--text); min-width: 200px; overflow-wrap: anywhere; word-break: break-word; }
 .table .actions { flex-wrap: nowrap; }
 
 
@@ -986,7 +1020,7 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
 .details span { font-size: 11.5px; color: var(--text-muted); }
 .details strong { font-size: 13.5px; font-weight: 500; }
 
-.review__title { font-size: 20px; font-weight: 700; line-height: 1.35; }
+.review__title { font-size: 20px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; word-break: break-word; }
 
 
 /* 12. Editor
@@ -995,7 +1029,7 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
 .queue { display: flex; flex-direction: column; gap: 12px; }
 .queue-item { padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .queue-item__info { display: flex; flex-direction: column; gap: 5px; flex: 1 1 240px; min-width: 0; }
-.queue-item__title { font-size: 16px; font-weight: 600; line-height: 1.4; }
+.queue-item__title { font-size: 16px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word; }
 
 /* Side-by-side versions: what the public sees vs. waiting for approval */
 .compare {
@@ -1004,7 +1038,7 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
   gap: 16px;
 }
 .compare > * { flex: 1 1 260px; min-width: 0; }
-.compare__col { border: 1px solid #e3e8f0; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.compare__col { border: 1px solid #e3e8f0; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; overflow-wrap: anywhere; word-break: break-word; }
 .compare__col p { font-size: 14px; line-height: 1.75; }
 .compare__col--live { background: #f6f9fd; color: #343b45; }
 .compare__col--pending { background: #edf6ff; border-color: #b6d0f6; color: #242e3d; }
@@ -1187,6 +1221,9 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
 .pager__step { gap: 6px; }
 .pager__step.is-disabled { opacity: 0.45; cursor: default; }
 
+/* Center the whole pager row (used in the editor queue) */
+.pager--center { justify-content: center; }
+
 /* The numbers sit in the middle, between the two buttons */
 .pager__pages {
   display: flex;
@@ -1248,3 +1285,31 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
   font-weight: 700;
 }
 .popup__text { font-size: 16px; font-weight: 600; line-height: 1.5; }
+
+/* Impact Analytics — article picker: a dropdown that shows ~10 articles then scrolls */
+.stats-picker { position: relative; display: inline-block; margin-bottom: 18px; max-width: 440px; }
+.stats-picker__summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px; cursor: pointer; list-style: none;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); color: var(--text); font-weight: 600;
+}
+.stats-picker__summary::-webkit-details-marker { display: none; }
+/* Let a long article title in the selected-article label wrap instead of overflowing */
+.stats-picker__current { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+.stats-picker__caret { color: var(--text-muted); transition: transform .15s ease; }
+.stats-picker[open] .stats-picker__caret { transform: rotate(180deg); }
+.stats-picker__menu {
+  position: absolute; z-index: 30; inset-inline-start: 0; margin-top: 6px;
+  min-width: 100%; max-height: 380px; overflow-y: auto;   /* ~10 rows, then scroll */
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); box-shadow: 0 10px 28px rgba(13, 27, 47, .15);
+}
+.stats-picker__item {
+  display: block; padding: 9px 14px; color: var(--text-body);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stats-picker__item:last-child { border-bottom: none; }
+.stats-picker__item:hover { background: var(--surface-tint); text-decoration: none; }
+.stats-picker__item.is-active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 700; }

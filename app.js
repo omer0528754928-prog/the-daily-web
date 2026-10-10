@@ -12,6 +12,7 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 const reporterRoutes = require('./routes/reporterRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 const editorRoutes = require('./routes/editorRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 const apiRoutes = require('./routes/api');
 const homePageRoutes = require('./routes/homePageRoutes');
 
@@ -50,10 +51,10 @@ app.use('/reporter', reporterRoutes);
 app.use('/articles', articleRoutes);
 
 app.use('/editor', editorRoutes);
+// Impact Analytics (editor only) — real view data from the monitoring collection
+app.use('/stats', statsRoutes);
 
 app.use('/', homePageRoutes);
-// Pages (for now they show the design's sample data)
-app.get('/stats', (req, res) => res.render('stats', { query: req.query }));
 
 app.use(notFound);
 app.use(errorHandler);

@@ -26,4 +26,10 @@ function findRelated(category, excludeId, limit = RELATED_LIMIT) {
     .lean();
 }
 
-module.exports = { findPublicArticle, findRelated };
+// +1 to the article's total views. MongoDB does $inc in one atomic step, so views that
+// arrive at the same moment are all counted (no read-then-write race between readers).
+function incrementViews(articleId) {
+  return Article.updateOne({ _id: articleId }, { $inc: { views: 1 } });
+}
+
+module.exports = { findPublicArticle, findRelated, incrementViews };
