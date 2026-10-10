@@ -1187,6 +1187,9 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
 .pager__step { gap: 6px; }
 .pager__step.is-disabled { opacity: 0.45; cursor: default; }
 
+/* Center the whole pager row (used in the editor queue) */
+.pager--center { justify-content: center; }
+
 /* The numbers sit in the middle, between the two buttons */
 .pager__pages {
   display: flex;
