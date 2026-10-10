@@ -694,7 +694,7 @@ a.card:hover { border-color: #7da6e3; text-decoration: none; color: inherit; }
 .article { border-radius: var(--radius-lg); padding: 26px 28px 32px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .breadcrumb { font-size: 13px; color: var(--text-muted); }
 .article__title { font-size: 36px; line-height: 1.18; font-weight: 800; text-wrap: pretty; overflow-wrap: anywhere; word-break: break-word; }
-.article__summary { font-size: 18px; line-height: 1.6; color: var(--text-soft); font-weight: 500; text-wrap: pretty; }
+.article__summary { font-size: 18px; line-height: 1.6; color: var(--text-soft); font-weight: 500; text-wrap: pretty; overflow-wrap: anywhere; word-break: break-word; }
 .byline {
   display: flex;
   flex-wrap: wrap;
@@ -1258,6 +1258,8 @@ fieldset:disabled .file-button { opacity: 0.5; cursor: default; }
   border-radius: var(--radius-sm); color: var(--text); font-weight: 600;
 }
 .stats-picker__summary::-webkit-details-marker { display: none; }
+/* Let a long article title in the selected-article label wrap instead of overflowing */
+.stats-picker__current { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 .stats-picker__caret { color: var(--text-muted); transition: transform .15s ease; }
 .stats-picker[open] .stats-picker__caret { transform: rotate(180deg); }
 .stats-picker__menu {
