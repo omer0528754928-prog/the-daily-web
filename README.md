@@ -133,7 +133,7 @@ The application loads `.env` using `process.loadEnvFile()`.
 | --- | --- |
 | `MONGODB_URI` | MongoDB connection URI used by the application and session store. The example uses `mongodb://127.0.0.1:27017/the-daily-web`. |
 | `SESSION_SECRET` | Private signing secret for session cookies. Set a strong value locally; never commit it. |
-| `WEATHER_API_KEY` | Optional OpenWeather API key for Member 2's Weather Widget. See the setup below; the rest of the site runs without it. |
+| `WEATHER_API_KEY` | Optional OpenWeather API key for Oz's (Member 2) Weather Widget. See the setup below; the rest of the site runs without it. |
 | `PORT` | Optional server port read by `app.js`; defaults to `3000`. Supported in code but not listed in `.env.example`. |
 
 Do not copy actual credentials into documentation. `.env` is ignored by Git; `.env.example` is the shared configuration template.
@@ -155,7 +155,7 @@ The current code calls OpenWeather's **Current Weather Data** and **5 Day / 3 Ho
 
 If the team provides a demo key privately, enter it in the same place instead of creating a new account. Do not assume a working key is included in the repository. Leave `.env.example` empty and never commit an actual key. OpenWeather applies usage limits at the account level: separate keys under one account still share its quota ([provider documentation](https://openweathermap.org/appid)).
 
-Without a key, the service returns no weather/forecast and the widget displays its unavailable state. A provider/network failure also has a fallback rather than making weather a startup requirement. Successful data is cached in server memory for about 14.5 minutes to reduce requests; a recent failed request has a one-minute retry delay. Restarting clears that cache. Member 2 should add any final feature-specific details in their section.
+Without a key, the service returns no weather/forecast and the widget displays its unavailable state. A provider/network failure also has a fallback rather than making weather a startup requirement. Successful data is cached in server memory for about 14.5 minutes to reduce requests; a recent failed request has a one-minute retry delay. Restarting clears that cache. More details are in [Oz's section](#member-2--oz--home-feed--weather).
 
 ## Startup Troubleshooting
 
@@ -322,8 +322,6 @@ Editor actions already call this shared service for edit, approve, return, and d
 | `login` | Supported | Recorded once after successful authentication and session save. Failed login does not record it. |
 | `article_view` | Supported | Recorded on every public article page view by the article page (Member 3); the Impact Analytics graph (Member 5) reads these events. |
 | `comment_created` | Supported | Not yet connected. |
-| `filter_used` | Supported | Not yet connected. |
-| `sort_used` | Supported | Not yet connected. |
 
 The service whitelists event types and explicit fields. Invalid input or storage failure returns false without throwing into the business flow; failures use a minimal console message. It is not an automatic sanitizer for secrets placed inside allowed strings: callers must pass controlled values only. Successful login does not wait for analytics storage before redirecting.
 
@@ -407,13 +405,28 @@ The shared infrastructure responsibility assigned to Omer includes these impleme
 
 These shared services are available to screen owners; their screen-specific integrations and documentation remain their responsibility.
 
-## Member 2 – Home Feed & Weather
+## Member 2 – Oz – Home Feed & Weather
 
-> TODO – Member 2: Replace this section with the final implementation details.
+### Home Feed
 
-Document home page/feed behavior, pagination or infinite scroll, search, category filtering, sorting, most-viewed articles, the Weather Widget, external API, caching/fallback behavior, routes/API endpoints, required environment variables, monitoring events, tests, and limitations.
+The home page (`GET /`) shows approved articles, a ticker of the four newest, and the five most viewed. More cards load from `GET /api/feed` as the reader scrolls (`public/js/feed.js`).
 
-When completing this section, describe only functionality that exists in the final merged version.
+Filters work without a page reload and stay in the URL:
+
+- `category`: one of `config/categories.js`.
+- `q`: partial-word search in the title or summary, ignoring case.
+- `sort`: `date` (default) or `popular`.
+- `view=unseen`: hides articles already opened in this browser (kept in `localStorage`).
+
+### Weather Widget
+
+The home page shows Tel Aviv's current weather and a four-day forecast; the article page shows a small current-weather widget. Data comes from OpenWeather (`services/weatherService.js`, needs `WEATHER_API_KEY`), is cached for 14.5 minutes, and is refreshed in the browser by `public/js/weather.js`. If the API fails, the widget says the weather is unavailable and the page still loads.
+
+### Tests and Limitations
+
+- `npm test` covers the weather service, the widget refresh, and the widget rendering. The feed has no automated tests.
+- Weather is for one fixed location, and its cache is cleared on server restart.
+- Weather failures are logged to the console only, not to `OperationalLog`.
 
 ## Member 3 – Article Page & Comments
 
