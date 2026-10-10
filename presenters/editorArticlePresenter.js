@@ -54,6 +54,7 @@ function toReviewView(article, input = {}) {
     category: article.category,
     updated: formatRelative(article.submittedAt || article.updatedAt),
     isPending: article.status === STATUS.PENDING,
+    isPublished: article.status === STATUS.PUBLISHED,
     isUpdate: Boolean(live),
     // The working copy = the submitted text (also what the editor edits and what waits for approval)
     working: {

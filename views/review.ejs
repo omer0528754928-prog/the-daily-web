@@ -110,6 +110,17 @@
             <button type="submit" formaction="/editor/articles/<%= article.id %>/return" class="btn btn-warning">החזרה לתיקונים</button>
           </div>
         </form>
+      <% } else if (article.isPublished) { %>
+        <%# A published article can be sent back for corrections; the public keeps seeing the current version %>
+        <form method="post" class="form-card__submit">
+          <label class="field">הערת עורך לכתב/ת <span class="meta">(חובה בעת החזרה לתיקונים)</span>
+            <textarea name="note" rows="3" placeholder="מה צריך לתקן? ההערה תוצג לכתב/ת באזור הכתב."></textarea>
+          </label>
+          <p class="hint">החזרה לתיקונים תעביר את הכתבה לכתב/ת עם ההערה. הגרסה שפורסמה תמשיך להיות מוצגת לציבור עד לאישור מחדש.</p>
+          <div>
+            <button type="submit" formaction="/editor/articles/<%= article.id %>/return" class="btn btn-warning">החזרה לתיקונים</button>
+          </div>
+        </form>
       <% } else { %>
         <span class="hint">אין גרסה שממתינה לאישור (הכתבה במצב «<%= article.status %>»).</span>
       <% } %>

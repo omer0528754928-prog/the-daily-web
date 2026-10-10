@@ -123,8 +123,9 @@ async function approve(articleId) {
   return saved;
 }
 
-// Return to the reporter with a note: pending -> returned. The note is required.
-// A previously published version (liveVersion) stays public and untouched.
+// Return to the reporter with a note. Allowed from "pending" (a submitted version) and
+// from "published" (send a live article back for corrections). The note is required.
+// The last approved version (liveVersion) stays public and untouched in both cases.
 async function returnToReporter(articleId, editorId, noteText) {
   const text = typeof noteText === 'string' ? noteText.trim() : '';
   if (!text) throw new HttpError(400, 'A note is required when returning an article', { note: 'Note is required' });
@@ -135,8 +136,9 @@ async function returnToReporter(articleId, editorId, noteText) {
     throw new HttpError(409, `An editor cannot return an article in status "${article.status}"`);
   }
 
+  // Guard on the current status (+ version) so a concurrent change is not overwritten
   const saved = await Article.findOneAndUpdate(
-    { _id: article._id, status: STATUS.PENDING, version: article.version },
+    { _id: article._id, status: article.status, version: article.version },
     {
       $set: { status: STATUS.RETURNED },
       $push: { editorNotes: { text, by: editorId, createdAt: new Date() } },

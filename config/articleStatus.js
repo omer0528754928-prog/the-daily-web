@@ -28,6 +28,9 @@ const REPORTER_TRANSITIONS = Object.freeze({
 
 const EDITOR_TRANSITIONS = Object.freeze({
   [STATUS.PENDING]: [STATUS.PUBLISHED, STATUS.RETURNED],
+  // An editor may also send an already-published article back for corrections.
+  // The last approved version (liveVersion) stays public while it is reworked.
+  [STATUS.PUBLISHED]: [STATUS.RETURNED],
 });
 
 // A reporter may send the article to the editor from these statuses
