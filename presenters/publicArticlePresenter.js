@@ -1,4 +1,5 @@
 const { formatDateTime, formatRelative } = require('../utils/dates');
+const CATEGORY_IMAGES = require('../config/categoryImages');
 
 // Shown if the reporter's user was deleted, so the byline is never empty
 const UNKNOWN_AUTHOR = 'מערכת The Daily Web';
@@ -30,7 +31,10 @@ function toPublicArticle(article) {
     publishedAt: new Date(live.publishedAt).toISOString(),
     views: (article.views || 0).toLocaleString('en-US'),
     paragraphs: toParagraphs(live.body),
-    image: live.image,
+    // No uploaded image: the same category illustration as the article's card on the home page
+    image: live.image || CATEGORY_IMAGES[live.category] || null,
+    // A real photo is described by the title; the category illustration is decoration (alt="")
+    imageAlt: live.image ? live.title : '',
   };
 }
 

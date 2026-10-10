@@ -4,13 +4,15 @@ const weatherService = require('../services/weatherService');
 const { toPublicArticle, toRelatedItem } = require('../presenters/publicArticlePresenter');
 const { toPublicComment, toCommentProblems, toCommentForm } = require('../presenters/commentPresenter');
 const { LIMITS: COMMENT_LIMITS } = require('../validators/commentValidator');
+const { ROLES } = require('../models/User');
+const { recordUsageEvent } = require('../services/analyticsService');
 
 const COMMENTS_PER_PAGE = 20;
 
 // Loads and renders everything on the article page. The whole article is rendered on the
 // server, so its full text is already in the first HTML response (search engines and readers
 // without JS see it). Also used to show the page again when the comment form has an error.
-async function renderArticlePage(req, res, { status = 200, commentForm = {}, commentErrors = [] } = {}) {
+async function renderArticlePage(req, res, { status = 200, commentForm = {}, commentErrors = [], rateLimited = false } = {}) {
   const { article } = req;
 
   const [related, comments, { weather }] = await Promise.all([
@@ -28,11 +30,22 @@ async function renderArticlePage(req, res, { status = 200, commentForm = {}, com
     commentLimits: COMMENT_LIMITS,
     commentForm,
     commentErrors,
+    rateLimited,
+    // Editors get edit/delete buttons on comments. Only a hint for the page:
+    // the API checks the role again on every request (routes/api/commentsRoutes.js).
+    canModerate: req.session.user?.role === ROLES.EDITOR,
   });
 }
 
 // GET /articles/:id
 function showArticle(req, res) {
+  // Count the visit for the editor's Impact Analytics. Fire-and-forget: a logging
+  // failure must never break the public page, so the promise is intentionally not awaited.
+  void recordUsageEvent({ type: 'article_view', source: 'article_page', articleId: req.article._id });
+  // +1 to the total shown on the page and used by the feed's "popular" sort.
+  // Also not awaited: if it fails, the reader still gets the page and the error is logged.
+  publicArticleService.incrementViews(req.article._id)
+    .catch(() => console.error('Could not count an article view.'));
   return renderArticlePage(req, res);
 }
 
@@ -57,4 +70,10 @@ async function addComment(req, res) {
   res.redirect(`/articles/${req.article._id}#comments`);
 }
 
-module.exports = { showArticle, addComment };
+// POST /articles/:id/comments over the limit (see middleware/commentRateLimit.js):
+// the article again with the "try again in a minute" message and what the guest typed
+function showCommentRateLimited(req, res) {
+  return renderArticlePage(req, res, { status: 429, rateLimited: true, commentForm: toCommentForm(req.body ?? {}) });
+}
+
+module.exports = { showArticle, addComment, showCommentRateLimited };

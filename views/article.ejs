@@ -15,6 +15,11 @@
   <div class="article-layout">
     <%# data-article-id: readArticles.js adds this article to the device's read list (the "לא נצפו" filter) %>
     <article class="card article" data-article-id="<%= article.id %>">
+      <%# Floats beside the card on wide screens, at the bottom of the screen on narrow ones (see .article__back in style.css).
+          A real link to the home page; public/js/backLink.js turns it into "back" when the reader came from this site. %>
+      <div class="article__back-bar">
+        <a href="/" class="btn btn-outline btn-sm article__back" data-back-link>→ חזרה</a>
+      </div>
       <nav class="breadcrumb" aria-label="מיקום באתר">
         <a href="/">ראשי</a> /
         <a href="/?category=<%= encodeURIComponent(article.category) %>"><%= article.category %></a>
@@ -30,7 +35,7 @@
         <span class="byline__views"><%= article.views %> צפיות</span>
       </div>
       <% if (article.image) { %>
-        <img src="<%= article.image %>" alt="<%= article.title %>" class="article__img">
+        <img src="<%= article.image %>" alt="<%= article.imageAlt %>" class="article__img">
       <% } else { %>
         <div class="img-placeholder article__img"><span>תמונה ראשית · קרדיט צילום</span></div>
       <% } %>
@@ -40,7 +45,7 @@
         <% }) %>
       </div>
 
-      <section class="comments" id="comments" data-article-id="<%= article.id %>">
+      <section class="comments" id="comments" data-article-id="<%= article.id %>"<% if (locals.canModerate) { %> data-can-moderate="true"<% } %>>
         <h2>תגובות (<span data-comment-count><%= commentCount %></span>)</h2>
         <form action="/articles/<%= article.id %>/comments" method="post" class="comment-form">
           <div class="comment-form__row">
@@ -104,6 +109,7 @@
   </div>
 </main>
 
+<script src="/js/backLink.js" defer></script>
 <script src="/js/readArticles.js" defer></script>
 <script src="/js/comments.js" defer></script>
 <script src="/js/weather.js" defer></script>

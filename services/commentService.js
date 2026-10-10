@@ -4,6 +4,12 @@ const { validateComment } = require('../validators/commentValidator');
 
 // What readers may see. ip is left out (and is select: false in the schema anyway).
 const PUBLIC_FIELDS = 'authorName text createdAt';
+const OBJECT_ID = /^[a-f\d]{24}$/i;
+
+// A malformed id gets the same 404 as a missing comment, before it reaches MongoDB
+function checkCommentId(commentId) {
+  if (!OBJECT_ID.test(commentId)) throw new HttpError(404, 'Comment not found');
+}
 
 // The newest comments of an article, one page at a time, plus how many there are in total
 async function listForArticle(articleId, { limit = 20, skip = 0 } = {}) {
@@ -39,4 +45,44 @@ async function createComment(articleId, input, { ip } = {}) {
   return { _id: comment._id, authorName: comment.authorName, text: comment.text, createdAt: comment.createdAt };
 }
 
-module.exports = { listForArticle, createComment };
+// Editor only: fixes a comment. Fields left out of input keep their value, and the same
+// rules apply as for a new comment. Returns the updated comment, or throws 404 / 400.
+async function updateComment(commentId, input = {}) {
+  checkCommentId(commentId);
+  const current = await Comment.findById(commentId).select(PUBLIC_FIELDS).lean();
+  if (!current) throw new HttpError(404, 'Comment not found');
+
+  const { value, errors } = validateComment({
+    name: input.name ?? current.authorName,
+    text: input.text ?? current.text,
+  });
+  if (Object.keys(errors).length) throw new HttpError(400, 'Validation failed', errors);
+
+  const updated = await Comment.findByIdAndUpdate(
+    commentId,
+    { $set: { authorName: value.authorName || Comment.GUEST_NAME, text: value.text } },
+    { returnDocument: 'after', runValidators: true },
+  )
+    .select(`${PUBLIC_FIELDS} articleId`)
+    .lean();
+  // Deleted by another editor between the two queries
+  if (!updated) throw new HttpError(404, 'Comment not found');
+  return updated;
+}
+
+// Editor only: deletes one comment. Returns it (for the log), or throws 404.
+async function deleteComment(commentId) {
+  checkCommentId(commentId);
+  const deleted = await Comment.findByIdAndDelete(commentId).select('articleId').lean();
+  if (!deleted) throw new HttpError(404, 'Comment not found');
+  return deleted;
+}
+
+// Deletes every comment of an article. For the editor's "delete article" action, so no
+// comments are left behind for an article that no longer exists. Returns how many were deleted.
+async function deleteByArticle(articleId) {
+  const { deletedCount } = await Comment.deleteMany({ articleId });
+  return deletedCount;
+}
+
+module.exports = { listForArticle, createComment, updateComment, deleteComment, deleteByArticle };

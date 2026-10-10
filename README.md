@@ -408,9 +408,57 @@ When completing this section, describe only functionality that exists in the fin
 
 ## Member 3 – Article Page & Comments
 
-> TODO – Member 3: Add final Article Page & Comments documentation.
+The public article page and its comments, end to end (model → routes → controller → view).
 
-Document the article route/display, comments and validation, view counting, `article_view` integration, guest/authenticated behavior, relevant routes/tests, error handling, and limitations. Distinguish existing article fields from events actually recorded by monitoring.
+### Article page – `GET /articles/:id`
+
+- Rendered on the server: the full article is already in the first HTML response, so search engines and readers without JavaScript get all of it.
+- Shows only `liveVersion`, the copy the editor approved. An article that is pending or returned keeps showing its last approved version; edits that were not approved never reach readers.
+- 404 for a malformed id, an unknown article, or one that was never approved (`middleware/loadPublicArticle.js` checks the id before any query).
+- Sidebar: up to 4 other public articles in the same category, and the small weather widget (Member 2's weather service).
+- No uploaded image → the same category illustration as the article's card on the home page (`config/categoryImages.js`).
+- A generic profile picture next to the reporter and each comment, and a back button ("→ חזרה"). The button goes back in the browser history when the reader came from this site, otherwise to the home page (it is a normal link, so it also works without JavaScript). On wide screens it floats in the margin beside the article.
+
+### Comments – `Comment` model
+
+- Fields: `articleId`, `authorName` (default "אורח"), `text` (up to 1000 characters), `ip`, timestamps. `ip` is `select: false`: it is kept for spam checks and never sent to the browser. Index `{ articleId: 1, createdAt: -1, _id: -1 }` for "newest comments of this article".
+- Guests comment without logging in. The server validates every comment (`validators/commentValidator.js`) and answers with Hebrew messages; checks in the browser are only a convenience.
+- Without JavaScript: the form posts to the server, which redirects back to the article (Post/Redirect/Get, so a refresh does not post twice). With JavaScript (`public/js/comments.js`): a new comment appears at the top right away, and "טעינת תגובות נוספות" loads older ones.
+- User text is escaped in the EJS view (`<%= %>`) and inserted with `textContent` in the browser, so a comment can never run as HTML.
+- **Spam limit** (`middleware/commentRateLimit.js`, written in the project, no external library): at most 3 saved comments a minute per device (IP address), shared by the form and the API. The server keeps, per IP, the times of the comments from the last minute and refuses a 4th. Over the limit the server answers 429 with "חרגת מהמגבלה — נסו שוב בעוד דקה". Comments rejected by validation do not count.
+- **Editors** can edit and delete comments on the article page. The API checks the editor role on the server (`requireRole('editor')`); hiding the buttons from other readers is only a convenience. Every edit and delete is written to the operational log (ids only, never the comment text).
+- `commentService.deleteByArticle(articleId)` deletes all the comments of an article, for when the article itself is deleted.
+
+### View counting
+
+Every `GET /articles/:id` does two things, without making the reader wait for either:
+
+- records a `UsageEvent` of type `article_view` (with the article id), which Impact Analytics reads to draw views over time;
+- adds 1 to `Article.views` with MongoDB's atomic `$inc`, so views arriving at the same moment are all counted. This is the total shown on the page and the one the feed's "popular" sort uses.
+
+If either fails, the error is logged and the page still loads. Comment posts, error pages and 404s are not counted.
+
+### Routes
+
+| Method | Path | Who | What |
+| --- | --- | --- | --- |
+| GET | `/articles/:id` | everyone | The article page |
+| POST | `/articles/:id/comments` | everyone (spam limit) | The comment form without JavaScript |
+| GET | `/api/articles/:id/comments?limit=&skip=` | everyone | Comments, newest first, one page at a time |
+| POST | `/api/articles/:id/comments` | everyone (spam limit) | A new comment (JSON) |
+| PATCH | `/api/comments/:id` | editors | Edit a comment's name or text |
+| DELETE | `/api/comments/:id` | editors | Delete a comment |
+
+### Tests
+
+`npm test` runs `tests/commentValidator.test.js`, `tests/commentService.test.js` and `tests/articlePage.test.js`. They run against an in-memory stand-in for MongoDB (`tests/helpers/fakeComments.js`), so no database is needed, and cover: showing only the approved version, the 404 cases, the full article in the first HTML, escaping user text, comments with and without JavaScript, validation, the spam limit, editor permissions and view counting.
+
+### Limitations
+
+- The spam limit counts per IP address, so people sharing one network (for example the same Wi-Fi) share the 3 comments a minute. The counts are kept in the server's memory: they start from zero after a restart, and would not be shared between several servers.
+- The view total on the page is the number from before the current visit; the +1 is saved in the background.
+- Editing and deleting comments needs JavaScript.
+- Deleting an article removes its comments only once the editor's delete action calls `commentService.deleteByArticle` (Member 5).
 
 ## Member 4 – Reporter Area
 

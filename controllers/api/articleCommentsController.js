@@ -1,5 +1,5 @@
 const commentService = require('../../services/commentService');
-const { toPublicComment, toCommentProblems } = require('../../presenters/commentPresenter');
+const { toPublicComment, toValidationProblem } = require('../../presenters/commentPresenter');
 
 // GET /api/articles/:id/comments?limit=&skip=: older comments for "load more", newest first
 async function listComments(req, res) {
@@ -20,11 +20,7 @@ async function createComment(req, res) {
   } catch (error) {
     if (error.status !== 400) throw error;
     // The same 400 the error handler would send, plus the Hebrew messages the page shows
-    return res.status(400).json({
-      error: error.message,
-      details: error.details,
-      messages: toCommentProblems(error.details),
-    });
+    return res.status(400).json(toValidationProblem(error));
   }
 
   res.status(201).json({ data: toPublicComment(comment) });
