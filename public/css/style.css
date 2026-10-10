@@ -844,7 +844,7 @@ img.article__img { width: 100%; object-fit: cover; }
 .table td { padding: 11px 8px; color: var(--text-soft); line-height: 1.45; vertical-align: middle; }
 .table tbody tr { border-bottom: 1px solid #ebeff4; }
 .table tbody tr:hover { background: #f8fafd; }
-.table__title { font-weight: 600; color: var(--text); min-width: 200px; }
+.table__title { font-weight: 600; color: var(--text); min-width: 200px; overflow-wrap: anywhere; word-break: break-word; }
 .table .actions { flex-wrap: nowrap; }
 
 
