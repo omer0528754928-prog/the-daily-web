@@ -82,3 +82,45 @@ describe('statsService.buildKpis', () => {
     assert.ok(!noSplit.some(k => k.label.includes('אחרי/לפני'))); // none without updates
   });
 });
+
+// getArticleStats reads approvals from the log; the first approval is the initial
+// publish and must NOT be counted as an update. Models are mocked, so no database.
+describe('statsService.getArticleStats — publish is not counted as an update', () => {
+  const UsageEvent = require('../models/UsageEvent');
+  const OperationalLog = require('../models/OperationalLog');
+  const { getArticleStats } = require('../services/statsService');
+  const ID = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+
+  // A tiny stand-in for a Mongoose query: supports .select().sort().lean()
+  function mockQuery(rows) {
+    const q = { select: () => q, sort: () => q, lean: () => Promise.resolve(rows) };
+    return q;
+  }
+  const realViewFind = UsageEvent.find;
+  const realLogFind = OperationalLog.find;
+  function withData(views, approvals, run) {
+    UsageEvent.find = () => mockQuery(views);
+    OperationalLog.find = () => mockQuery(approvals);
+    return Promise.resolve()
+      .then(run)
+      .finally(() => { UsageEvent.find = realViewFind; OperationalLog.find = realLogFind; });
+  }
+  const view = ms => ({ createdAt: new Date(ms) });
+  const approval = ms => ({ message: `Editor approved and published article ${ID}`, createdAt: new Date(ms) });
+  const updatesKpi = stats => stats.kpis.find(k => k.label.includes('עדכונים')).value;
+
+  it('a plain publish (one approval) counts as 0 updates and no markers', () => {
+    return withData([view(0), view(5 * DAY)], [approval(0)], async () => {
+      const stats = await getArticleStats(ID);
+      assert.strictEqual(updatesKpi(stats), '0');
+      assert.strictEqual(stats.updates.length, 0);
+    });
+  });
+
+  it('three approvals (publish + two updates) count as 2 updates', () => {
+    return withData([view(0), view(14 * DAY)], [approval(0), approval(6 * DAY), approval(10 * DAY)], async () => {
+      const stats = await getArticleStats(ID);
+      assert.strictEqual(updatesKpi(stats), '2');
+    });
+  });
+});

@@ -101,10 +101,11 @@ async function listViewTimes(articleId) {
   return events.map(event => event.createdAt);
 }
 
-// The times the editor approved & published an update of this article.
+// Every time the editor approved & published this article, oldest first.
 // Read from the operational log, where every approval is already recorded
-// (the article id is part of the log message).
-async function listUpdateTimes(articleId) {
+// (the article id is part of the log message). The first one is the initial
+// publish; the rest are updates (getArticleStats makes that distinction).
+async function listApprovalTimes(articleId) {
   const id = String(articleId);
   const logs = await OperationalLog.find({ source: 'editor', event: 'article_approved' })
     .select('message createdAt')
@@ -116,7 +117,10 @@ async function listUpdateTimes(articleId) {
 // Everything the stats page needs for one article: the view series, the update
 // markers placed on the same axis, and the headline numbers.
 async function getArticleStats(articleId) {
-  const [viewTimes, updateTimes] = await Promise.all([listViewTimes(articleId), listUpdateTimes(articleId)]);
+  const [viewTimes, approvals] = await Promise.all([listViewTimes(articleId), listApprovalTimes(articleId)]);
+  // The first approval is the initial publish, not an update: publish = 0 updates,
+  // first update = 1, second = 2, ... So we count the approvals after the first one.
+  const updateTimes = approvals.slice(1);
   const series = bucketByTime(viewTimes, Date.now());
   const updates = updateBuckets(updateTimes, series);        // bucket indices, for the graph markers
 
@@ -138,6 +142,6 @@ module.exports = {
   buildKpis,
   listPublishedArticles,
   listViewTimes,
-  listUpdateTimes,
+  listApprovalTimes,
   getArticleStats,
 };

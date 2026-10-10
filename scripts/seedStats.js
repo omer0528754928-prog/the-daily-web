@@ -1,6 +1,6 @@
 // Fills the monitoring collections with demo data for the editor's Impact Analytics:
 // per published article, a stream of "article_view" events over the last two weeks,
-// plus one or two "article_approved" operational-log entries (the update-publish points).
+// plus an initial-publish approval and zero-to-two update approvals in the operational log.
 // The real app records the same events at runtime; this just gives the graph history to show.
 // Safe to run more than once: it clears the demo events for each article before re-creating them.
 // Usage: npm run seed:stats
@@ -51,8 +51,11 @@ async function seedArticle(article, updateDays) {
   }
   await UsageEvent.insertMany(views);
 
-  // Update-publish points: operational-log entries, same shape the editor flow writes
-  const approvals = updateDays.map(day => ({
+  // Approval log entries, same shape the editor flow writes. Day 0 is the initial
+  // publish (the stats skip it); the rest are updates, so the graph shows them as
+  // "update 1", "update 2", ... and the "updates published" count is 0 for a plain publish.
+  const approvalDays = [0, ...updateDays];
+  const approvals = approvalDays.map(day => ({
     level: 'info',
     source: 'editor',
     event: 'article_approved',
@@ -82,7 +85,8 @@ async function run() {
   let totalViews = 0;
   for (let i = 0; i < articles.length; i++) {
     // Vary the update points per article: some get two updates, some one
-    const updateDays = i % 3 === 0 ? [5] : [5, 10];
+    // Mix of articles with 0, 1 and 2 updates after publishing, to show the full range
+    const updateDays = i % 3 === 0 ? [] : (i % 3 === 1 ? [6] : [6, 10]);
     const created = await seedArticle(articles[i], updateDays);
     totalViews += created;
     console.log(`  ${articles[i].title}: ${created} views, ${updateDays.length} update point(s)`);
