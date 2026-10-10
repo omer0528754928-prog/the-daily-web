@@ -117,10 +117,21 @@ async function listApprovalTimes(articleId) {
 // Everything the stats page needs for one article: the view series, the update
 // markers placed on the same axis, and the headline numbers.
 async function getArticleStats(articleId) {
-  const [viewTimes, approvals] = await Promise.all([listViewTimes(articleId), listApprovalTimes(articleId)]);
-  // The first approval is the initial publish, not an update: publish = 0 updates,
-  // first update = 1, second = 2, ... So we count the approvals after the first one.
-  const updateTimes = approvals.slice(1);
+  const [article, viewTimes, approvals] = await Promise.all([
+    Article.findById(articleId).select('liveVersion.version').lean(),
+    listViewTimes(articleId),
+    listApprovalTimes(articleId),
+  ]);
+
+  // Number of updates = how many versions past the initial publish the article is.
+  // liveVersion.version is 1 at the first publish, 2 after the first update, and so on,
+  // so updates = version - 1. (The version is authoritative — a seeded article is published
+  // without an approval log, so counting log entries alone would miss its initial publish.)
+  const liveVersionNo = (article && article.liveVersion && article.liveVersion.version) || 1;
+  const updateCount = Math.max(0, liveVersionNo - 1);
+
+  // Graph markers: the most recent `updateCount` approval timestamps (the updates after the publish)
+  const updateTimes = updateCount > 0 ? approvals.slice(-updateCount) : [];
   const series = bucketByTime(viewTimes, Date.now());
   const updates = updateBuckets(updateTimes, series);        // bucket indices, for the graph markers
 
@@ -130,7 +141,7 @@ async function getArticleStats(articleId) {
   const lastUpdateMs = updateTimes.length ? new Date(updateTimes[updateTimes.length - 1]).getTime() : null;
   const split = lastUpdateMs != null ? splitByTime(viewTimes, lastUpdateMs) : null;
 
-  return { counts: series.counts, labels: series.labels, updates, kpis: buildKpis({ total, peak, updateCount: updateTimes.length, split }) };
+  return { counts: series.counts, labels: series.labels, updates, kpis: buildKpis({ total, peak, updateCount, split }) };
 }
 
 module.exports = {

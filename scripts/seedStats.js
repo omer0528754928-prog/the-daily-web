@@ -71,7 +71,7 @@ async function run() {
   await connectDB();
 
   const articles = await Article.find({ 'liveVersion.publishedAt': { $ne: null } })
-    .select('title')
+    .select('title liveVersion.version')
     .sort({ 'liveVersion.publishedAt': -1 })
     .limit(MAX_ARTICLES)
     .lean();
@@ -82,14 +82,16 @@ async function run() {
     return;
   }
 
+  const POSSIBLE_UPDATE_DAYS = [6, 10, 3, 9]; // spread update points across the two-week window
   let totalViews = 0;
   for (let i = 0; i < articles.length; i++) {
-    // Vary the update points per article: some get two updates, some one
-    // Mix of articles with 0, 1 and 2 updates after publishing, to show the full range
-    const updateDays = i % 3 === 0 ? [] : (i % 3 === 1 ? [6] : [6, 10]);
+    // One update point per version past the initial publish, so the graph markers match
+    // the "updates published" count (version - 1) that the stats derive from the article.
+    const version = (articles[i].liveVersion && articles[i].liveVersion.version) || 1;
+    const updateDays = POSSIBLE_UPDATE_DAYS.slice(0, Math.max(0, version - 1)).sort((a, b) => a - b);
     const created = await seedArticle(articles[i], updateDays);
     totalViews += created;
-    console.log(`  ${articles[i].title}: ${created} views, ${updateDays.length} update point(s)`);
+    console.log(`  ${articles[i].title}: ${created} views, ${updateDays.length} update(s)`);
   }
 
   console.log(`\nDone. ${articles.length} articles, ${totalViews} view events in the last ${WINDOW_DAYS} days.`);

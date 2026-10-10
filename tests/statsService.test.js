@@ -83,44 +83,56 @@ describe('statsService.buildKpis', () => {
   });
 });
 
-// getArticleStats reads approvals from the log; the first approval is the initial
-// publish and must NOT be counted as an update. Models are mocked, so no database.
-describe('statsService.getArticleStats — publish is not counted as an update', () => {
+// The "updates published" count comes from the article's version (liveVersion.version - 1),
+// not from counting approval-log rows. Models are mocked, so no database.
+describe('statsService.getArticleStats — update count comes from liveVersion.version', () => {
   const UsageEvent = require('../models/UsageEvent');
   const OperationalLog = require('../models/OperationalLog');
+  const Article = require('../models/Article');
   const { getArticleStats } = require('../services/statsService');
   const ID = 'aaaaaaaaaaaaaaaaaaaaaaaa';
 
-  // A tiny stand-in for a Mongoose query: supports .select().sort().lean()
   function mockQuery(rows) {
     const q = { select: () => q, sort: () => q, lean: () => Promise.resolve(rows) };
     return q;
   }
+  function mockDoc(doc) {
+    const q = { select: () => q, lean: () => Promise.resolve(doc) };
+    return q;
+  }
   const realViewFind = UsageEvent.find;
   const realLogFind = OperationalLog.find;
-  function withData(views, approvals, run) {
+  const realById = Article.findById;
+  function withData(views, approvals, versionNo, run) {
     UsageEvent.find = () => mockQuery(views);
     OperationalLog.find = () => mockQuery(approvals);
+    Article.findById = () => mockDoc({ liveVersion: { version: versionNo } });
     return Promise.resolve()
       .then(run)
-      .finally(() => { UsageEvent.find = realViewFind; OperationalLog.find = realLogFind; });
+      .finally(() => { UsageEvent.find = realViewFind; OperationalLog.find = realLogFind; Article.findById = realById; });
   }
   const view = ms => ({ createdAt: new Date(ms) });
   const approval = ms => ({ message: `Editor approved and published article ${ID}`, createdAt: new Date(ms) });
   const updatesKpi = stats => stats.kpis.find(k => k.label.includes('עדכונים')).value;
 
-  it('a plain publish (one approval) counts as 0 updates and no markers', () => {
-    return withData([view(0), view(5 * DAY)], [approval(0)], async () => {
+  it('version 1 (just published) = 0 updates, no markers', () => {
+    return withData([view(0), view(5 * DAY)], [approval(0)], 1, async () => {
       const stats = await getArticleStats(ID);
       assert.strictEqual(updatesKpi(stats), '0');
       assert.strictEqual(stats.updates.length, 0);
     });
   });
 
-  it('three approvals (publish + two updates) count as 2 updates', () => {
-    return withData([view(0), view(14 * DAY)], [approval(0), approval(6 * DAY), approval(10 * DAY)], async () => {
-      const stats = await getArticleStats(ID);
-      assert.strictEqual(updatesKpi(stats), '2');
+  it('version 3 = 2 updates', () => {
+    return withData([view(0), view(14 * DAY)], [approval(0), approval(6 * DAY), approval(10 * DAY)], 3, async () => {
+      assert.strictEqual(updatesKpi(await getArticleStats(ID)), '2');
+    });
+  });
+
+  it('version 3 still counts 2 even when the initial publish was never logged (seeded article)', () => {
+    // Only one approval log (a real republish), but the article version says 2 updates
+    return withData([view(0), view(14 * DAY)], [approval(10 * DAY)], 3, async () => {
+      assert.strictEqual(updatesKpi(await getArticleStats(ID)), '2');
     });
   });
 });
