@@ -1,5 +1,7 @@
-// Fills MongoDB with users and the articles from articlesDB/articles.json.
-// Safe to run more than once: users are matched by username, articles by legacyId.
+// Fills MongoDB with users, the articles from articlesDB/articles.json and the comments from
+// articlesDB/comments.json.
+// Safe to run more than once: users are matched by username, articles by legacyId, and comments
+// by article + author name + text (comments left on the site are never touched).
 // Usage: npm run seed
 
 process.loadEnvFile();
@@ -9,11 +11,14 @@ const mongoose = require('mongoose');
 const connectDB = require('../config/db');
 const User = require('../models/User');
 const Article = require('../models/Article');
+const Comment = require('../models/Comment');
 const { STATUS } = require('../config/articleStatus');
 
 const { ROLES } = User;
 const HOUR = 60 * 60 * 1000;
 const MINUTE = 60 * 1000;
+// How long after an article went live its first seeded comment appears
+const COMMENT_DELAY = 15 * MINUTE;
 
 const USERS = [
   { username: 'reporter01', name: 'דנה לוי', role: ROLES.REPORTER },
@@ -174,14 +179,58 @@ async function seedArticles(users) {
   return rawArticles.length;
 }
 
+// Comments point at articles by legacyId, so this runs after the articles are saved.
+// Article dates are relative to now, so each article's comments are moved to start shortly
+// after it went live (or was created, if never published), keeping the gaps between them.
+async function seedComments() {
+  const rawComments = require(path.join(__dirname, '../articlesDB/comments.json'));
+  const articleByLegacyId = new Map(
+    (await Article.find({ legacyId: { $ne: null } }).select('legacyId createdAt liveVersion.publishedAt').lean())
+      .map(a => [a.legacyId, a]),
+  );
+
+  const commentsByLegacyId = new Map();
+  for (const raw of rawComments) {
+    if (!articleByLegacyId.has(raw.legacyId)) continue;
+    if (!commentsByLegacyId.has(raw.legacyId)) commentsByLegacyId.set(raw.legacyId, []);
+    commentsByLegacyId.get(raw.legacyId).push(raw);
+  }
+
+  const ops = [];
+  for (const [legacyId, comments] of commentsByLegacyId) {
+    const article = articleByLegacyId.get(legacyId);
+    const wentLiveAt = article.liveVersion?.publishedAt || article.createdAt;
+    const firstAt = Math.min(...comments.map(raw => new Date(raw.createdAt)));
+    const shift = wentLiveAt.getTime() + COMMENT_DELAY - firstAt;
+
+    for (const raw of comments) {
+      const authorName = raw.authorName || Comment.GUEST_NAME;
+      const createdAt = new Date(new Date(raw.createdAt).getTime() + shift);
+      ops.push({
+        updateOne: {
+          // Not matched by time, since the time moves with every run
+          filter: { articleId: article._id, authorName, text: raw.text },
+          update: { $set: { articleId: article._id, authorName, text: raw.text, createdAt, updatedAt: createdAt } },
+          upsert: true,
+          timestamps: false,
+        },
+      });
+    }
+  }
+
+  if (ops.length) await Comment.bulkWrite(ops);
+  return ops.length;
+}
+
 async function seed() {
   await connectDB();
-  await Promise.all([User.syncIndexes(), Article.syncIndexes()]);
+  await Promise.all([User.syncIndexes(), Article.syncIndexes(), Comment.syncIndexes()]);
 
   const users = await seedUsers();
   const articleCount = await seedArticles(users);
+  const commentCount = await seedComments();
 
-  console.log(`Seeded ${users.length} users and ${articleCount} articles`);
+  console.log(`Seeded ${users.length} users, ${articleCount} articles and ${commentCount} comments`);
   await mongoose.disconnect();
 }
 

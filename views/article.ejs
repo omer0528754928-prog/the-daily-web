@@ -13,7 +13,8 @@
 
 <main class="container container--narrow page">
   <div class="article-layout">
-    <article class="card article">
+    <%# data-article-id: readArticles.js adds this article to the device's read list (the "לא נצפו" filter) %>
+    <article class="card article" data-article-id="<%= article.id %>">
       <%# Floats beside the card on wide screens, at the bottom of the screen on narrow ones (see .article__back in style.css).
           A real link to the home page; public/js/backLink.js turns it into "back" when the reader came from this site. %>
       <div class="article__back-bar">
@@ -109,6 +110,7 @@
 </main>
 
 <script src="/js/backLink.js" defer></script>
+<script src="/js/readArticles.js" defer></script>
 <script src="/js/comments.js" defer></script>
 <script src="/js/weather.js" defer></script>
 <%- include('partials/footer') %>

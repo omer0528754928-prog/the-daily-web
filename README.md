@@ -462,9 +462,31 @@ If either fails, the error is logged and the page still loads. Comment posts, er
 
 ## Member 4 – Reporter Area
 
-> TODO – Member 4: Add final Reporter Area documentation.
+The Reporter area is the part of the site where Reporters write their articles. A Reporter cannot publish alone: every new article, and every change to a published one, must be approved by the Editor first.
 
-Document the dashboard, article creation/editing, autosave, validation, statuses/workflow, published-article updates, routes/tests, Reporter permissions, and limitations.
+- **Dashboard** – `GET /reporter` lists the user's own articles only, 10 per page, newest update first, with status, latest Editor note, and views. Filters: category, status, returned, publish date.
+- **Article creation and editing** – one form with three modes (new, edit, read-only view). Fields: title, category, main image, summary, body. Editor notes are shown read-only.
+- **Autosave** – `public/js/autosave.js` saves through the Reporter API about 1.5 seconds after typing stops and when the tab is hidden. The draft is created once the title has 3 characters.
+- **Validation** – done on the server in `validators/articleValidator.js`. Title and category are required; body is required to send. Limits: 200 / 500 / 50,000 characters; image up to 5 MB (JPEG, PNG, GIF, WebP). Problems are shown in Hebrew above the form.
+- **Statuses and workflow** – the hand-off between Reporter and Editor (rules in `config/articleStatus.js`):
+  1. The Reporter writes the article. Status: `draft` (בהכנה).
+  2. The Reporter sends it to the Editor. Status: `pending` (ממתינה לאישור). The Reporter can no longer change it.
+  3. The Editor decides. Approve: status `published` (פורסמה) and the article goes public. Return: status `returned` (הוחזרה לתיקונים) with a note for the Reporter, and the returned counter goes up by one.
+  4. The Reporter reads the note, fixes the article, and sends it again (back to step 2).
+- **Published-article updates** – the Reporter can change a published article and send the update to the Editor (same steps 2–4). Until the Editor approves, and also if the Editor returns it, the public keeps seeing the last approved version (`liveVersion`). An unchanged article cannot be sent.
+- **Routes** – pages: `GET /reporter`, `GET /reporter/articles/new`, `POST /reporter/articles`, `GET /reporter/articles/:id`, `GET /reporter/articles/:id/edit`, `POST /reporter/articles/:id`. API under `/api/reporter/articles`: `GET /`, `POST /`, `GET /:id`, `PATCH /:id`, `POST /:id/submit`.
+- **Tests** – no automated tests for this area yet. To check it manually:
+  1. Start the app and log in as `reporter01` (password `reporter01`).
+  2. Click "+ כתבה חדשה" and type a title and a body. Wait for "✓ נשמר אוטומטית", refresh the page, and see that the text is still there.
+  3. Click "שליחה לאישור עורך". The dashboard shows "ממתינה לאישור", and the article now opens read-only.
+  4. Log out, log in as `editor01`, and return the article with a note.
+  5. Log in as `reporter01` again. The status is "הוחזרה לתיקונים" and the note is shown. Fix the article and send it again.
+  6. After the Editor approves it, open the published article. The send button stays disabled until something is changed.
+- **Reporter permissions** – who can do what:
+  - A user sees and edits only articles they wrote. Another Reporter's article address returns "page not found".
+  - An article waiting for the Editor can be opened but not changed.
+  - No environment variables of its own. Unexpected server errors are logged by the shared global error handler.
+- **Limitations** – a Reporter cannot delete articles. Images are stored on local disk (`public/uploads/articles/`, not in Git). The dashboard has no text search.
 
 ## Member 5 – Editor Area & Impact Analytics
 

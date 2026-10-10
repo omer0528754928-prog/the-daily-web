@@ -10,10 +10,10 @@ function toFeedCard(article) {
     title: live.title,
     summary: live.summary,
     category: live.category,
-    image: live.image || categoryToImage[live.category],
-    reporter: article.author?.name,
+    image: live.image || categoryToImage[live.category], // no image -> the category's placeholder
+    reporter: article.author?.name, // ?. in case the reporter's user was deleted
     date: formatRelative(live.publishedAt),
-    views: article.views.toLocaleString('en-US'),
+    views: article.views.toLocaleString('en-US'), // 12345 -> "12,345"
   };
 }
 

@@ -1,4 +1,6 @@
 <section class="widget weather"<% if (weather) { %> data-fetched-at="<%= weather.fetchedAt %>"<% } %>>
+        <%# data-fetched-at (only when there is weather) tells public/js/weather.js when to refresh this widget.
+            weather = null means the API is unavailable: show a message, never old data %>
         <% if (weather) { %>
           <div class="weather__main">
             <div>
