@@ -68,6 +68,9 @@ function toArticleForm(article, authorName, input = {}) {
     image: article.image ?? null,
     author: authorName,
     status: STATUS_LABELS[article.status],
+    // True when the reporter is editing an already-published article (a new update),
+    // so the form can avoid calling it a "draft"
+    isPublished: article.status === STATUS.PUBLISHED,
     updated: formatRelative(article.updatedAt),
     published: formatPublished(article),
     returned: formatReturned(article.returnedCount),

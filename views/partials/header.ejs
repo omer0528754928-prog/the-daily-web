@@ -5,12 +5,15 @@
   // The white bar (categories + search) is shown only on pages that ask for it: the home feed and the public article page.
   const showCategoryBar = locals.showCategoryBar === true;
   const today = new Date().toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  // Nav links shown by role: the feed is public; the reporter area is for reporters;
+  // the editor area and the statistics are for editors only (also enforced on the server).
+  const role = locals.currentUser && locals.currentUser.role;
   const navLinks = [
     { key: 'feed', href: '/', label: 'פיד הבית' },
-    { key: 'reporter', href: '/reporter', label: 'אזור כתב' },
-    { key: 'editor', href: '/editor', label: 'אזור עורך' },
-    { key: 'stats', href: '/stats', label: 'סטטיסטיקות' },
-  ];
+    { key: 'reporter', href: '/reporter', label: 'אזור כתב', roles: ['reporter'] },
+    { key: 'editor', href: '/editor', label: 'אזור עורך', roles: ['editor'] },
+    { key: 'stats', href: '/stats', label: 'סטטיסטיקות', roles: ['editor'] },
+  ].filter(link => !link.roles || link.roles.includes(role));
   // Category link that keeps the search and sort when used on the home page (so it works without JS too).
   // Other pages' query strings mean something else (e.g. the reporter's table filters), so they aren't carried over.
   const categoryLink = (category) => {

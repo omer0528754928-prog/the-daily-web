@@ -98,7 +98,7 @@ function buildArticle(raw, index, authors, editor, now) {
 
   // The working copy differs from the public one when the reporter changed it after approval
   const workingCopy = hasNewerVersion
-    ? { ...original, title: `${original.title} (עדכון)`, body: `${original.body}\n\nעדכון: נוספו פרטים חדשים מהשעות האחרונות.` }
+    ? { ...original, body: `${original.body}\n\nעדכון: נוספו פרטים חדשים מהשעות האחרונות.` }
     : original;
   const version = liveVersion ? liveVersion.version + (hasNewerVersion ? 1 : 0) : 1;
 

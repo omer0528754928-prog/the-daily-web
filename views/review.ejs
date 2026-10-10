@@ -72,11 +72,13 @@
         <details class="details">
           <summary class="btn btn-outline">עריכת התוכן על ידי העורך</summary>
           <form action="/editor/articles/<%= article.id %>/edit" method="post" enctype="multipart/form-data" class="form-fields">
+            <%# No client maxlength: let the server validator reject over-length text
+                and show the Hebrew message, exactly like the reporter form %>
             <label class="field">כותרת
-              <input type="text" name="title" value="<%= article.working.title %>" maxlength="200" required>
+              <input type="text" name="title" value="<%= article.working.title %>" required>
             </label>
             <label class="field">תקציר
-              <input type="text" name="summary" value="<%= article.working.summary %>" maxlength="500">
+              <input type="text" name="summary" value="<%= article.working.summary %>">
             </label>
             <label class="field">קטגוריה
               <select name="category">

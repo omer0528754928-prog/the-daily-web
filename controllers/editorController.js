@@ -14,6 +14,49 @@ const TABS = [
   { key: STATUS.PUBLISHED, label: STATUS_LABELS[STATUS.PUBLISHED] },
 ];
 
+// Builds "/editor?..." keeping the active status tab and changing only the page
+function editorPageUrl(status, page) {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (page > 1) params.set('page', page);
+  const query = params.toString();
+  return query ? `/editor?${query}` : '/editor';
+}
+
+// The numbered page buttons: first three and last three pages, the current page,
+// and a gap (…) wherever numbers were skipped (same shape as the reporter table)
+function editorPageItems(status, current, pages) {
+  const wanted = pages <= 7
+    ? Array.from({ length: pages }, (_, index) => index + 1)
+    : [1, 2, 3, pages - 2, pages - 1, pages, current];
+  const shown = new Set(wanted.filter(number => number >= 1 && number <= pages));
+
+  const items = [];
+  let previous = 0;
+  for (const number of [...shown].sort((a, b) => a - b)) {
+    if (previous && number - previous > 1) items.push({ type: 'gap' });
+    items.push({ type: 'page', number, url: editorPageUrl(status, number), current: number === current });
+    previous = number;
+  }
+  return items;
+}
+
+// The editor queue's pager, built exactly like the reporter's (see reporterFiltersPresenter.toPager)
+function buildEditorPager({ page, pageSize, total, status }) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const current = Math.min(page, pages);
+
+  return {
+    page: current,
+    pages,
+    total,
+    shown: Math.max(0, Math.min(current * pageSize, total) - (current - 1) * pageSize),
+    items: editorPageItems(status, current, pages),
+    prevUrl: current > 1 ? editorPageUrl(status, current - 1) : null,
+    nextUrl: current < pages ? editorPageUrl(status, current + 1) : null,
+  };
+}
+
 // A one-time message shown on the next page (same pattern as the reporter area)
 function remember(req, message) {
   req.session.flash = message;
@@ -53,7 +96,7 @@ async function showQueue(req, res) {
     queue: items.map(toEditorRow),
     tabs: TABS,
     activeStatus,
-    pager: { page, total, pageSize: limit },
+    pager: buildEditorPager({ page, pageSize: limit, total, status: activeStatus }),
   });
 }
 

@@ -2,8 +2,7 @@
   const queue = locals.queue || [];
   const tabs = locals.tabs || [];
   const activeStatus = locals.activeStatus || '';
-  const pager = locals.pager || { page: 1, total: queue.length, pageSize: queue.length || 1 };
-  const totalPages = Math.max(1, Math.ceil(pager.total / pager.pageSize));
+  const pager = locals.pager || { page: 1, pages: 1, total: queue.length, items: [] };
   const activeLabel = (tabs.find(t => t.key === activeStatus) || { label: 'הכל' }).label;
   const statusHref = (key) => (key ? `/editor?status=${encodeURIComponent(key)}` : '/editor');
 %>
@@ -20,12 +19,16 @@
       <h1>אזור העורך</h1>
       <p><%= pager.total %> כתבות · מסונן לפי «<%= activeLabel %>»</p>
     </div>
-    <nav class="tabs">
-      <% tabs.forEach(tab => { %>
-        <a href="<%= statusHref(tab.key) %>" class="pill <%= activeStatus === tab.key ? 'is-active' : '' %>"><%= tab.label %></a>
-      <% }) %>
-    </nav>
+    <div class="page-head__actions">
+      <a href="/stats" class="btn btn-outline">אזור הסטטיסטיקות ←</a>
+    </div>
   </div>
+
+  <nav class="tabs">
+    <% tabs.forEach(tab => { %>
+      <a href="<%= statusHref(tab.key) %>" class="pill <%= activeStatus === tab.key ? 'is-active' : '' %>"><%= tab.label %></a>
+    <% }) %>
+  </nav>
 
   <div class="queue">
     <% queue.forEach(article => { %>
@@ -49,17 +52,26 @@
     <% } %>
   </div>
 
-  <% if (totalPages > 1) { %>
-    <% const base = activeStatus ? `status=${encodeURIComponent(activeStatus)}&` : ''; %>
-    <nav class="pager" aria-label="ניווט בין עמודים">
-      <% if (pager.page > 1) { %>
-        <a href="/editor?<%= base %>page=<%= pager.page - 1 %>" class="btn btn-outline btn-sm pager__step">הקודם <span aria-hidden="true">→</span></a>
+  <% if (pager && pager.pages > 1) { %>
+    <nav class="pager pager--center" aria-label="ניווט בין עמודים">
+      <% if (pager.prevUrl) { %>
+        <a href="<%= pager.prevUrl %>" class="btn btn-outline btn-sm pager__step">הקודם <span aria-hidden="true">→</span></a>
       <% } else { %>
         <span class="btn btn-outline btn-sm pager__step is-disabled">הקודם <span aria-hidden="true">→</span></span>
       <% } %>
-      <span class="pager__info">עמוד <%= pager.page %> מתוך <%= totalPages %></span>
-      <% if (pager.page < totalPages) { %>
-        <a href="/editor?<%= base %>page=<%= pager.page + 1 %>" class="btn btn-outline btn-sm pager__step"><span aria-hidden="true">←</span> הבא</a>
+      <div class="pager__pages">
+        <% pager.items.forEach(item => { %>
+          <% if (item.type === 'gap') { %>
+            <span class="pager__gap">…</span>
+          <% } else if (item.current) { %>
+            <span class="pager__page is-current" aria-current="page"><%= item.number %></span>
+          <% } else { %>
+            <a href="<%= item.url %>" class="pager__page"><%= item.number %></a>
+          <% } %>
+        <% }) %>
+      </div>
+      <% if (pager.nextUrl) { %>
+        <a href="<%= pager.nextUrl %>" class="btn btn-outline btn-sm pager__step"><span aria-hidden="true">←</span> הבא</a>
       <% } else { %>
         <span class="btn btn-outline btn-sm pager__step is-disabled"><span aria-hidden="true">←</span> הבא</span>
       <% } %>
