@@ -400,50 +400,24 @@ These shared services are available to screen owners; their screen-specific inte
 
 ### Home Feed
 
-The home page (`GET /`) shows articles an Editor has approved at least once, with a lead story, side stories, and a grid. It also has a ticker of the four newest articles and a "הנצפות ביותר" sidebar (top five by views). The server renders the first 20 cards; `public/js/feed.js` loads more from `/api/feed` as the reader scrolls (infinite scroll), with a retry button if a batch fails.
+The home page (`GET /`) shows approved articles, a ticker of the four newest, and the five most viewed. More cards load from `GET /api/feed` as the reader scrolls (`public/js/feed.js`).
 
-Filters are query parameters, applied without a page reload and kept in the URL (Back/Forward and shared links work):
+Filters work without a page reload and stay in the URL:
 
 - `category`: one of `config/categories.js`.
-- `q`: case-insensitive partial-word search in the title or summary (up to 100 characters).
+- `q`: partial-word search in the title or summary, ignoring case.
 - `sort`: `date` (default) or `popular`.
-- `view=unseen`: hides articles already opened in this browser. `public/js/readArticles.js` keeps the last 200 opened article IDs in `localStorage`; nothing is stored on the server.
-
-Invalid values return 400.
+- `view=unseen`: hides articles already opened in this browser (kept in `localStorage`).
 
 ### Weather Widget
 
-The home page shows the current weather in Tel Aviv plus a four-day forecast; the article page shows a small current-weather widget. `services/weatherService.js` calls OpenWeather (needs `WEATHER_API_KEY`, see [Optional: Enable Live Weather](#optional-enable-live-weather)).
+The home page shows Tel Aviv's current weather and a four-day forecast; the article page shows a small current-weather widget. Data comes from OpenWeather (`services/weatherService.js`, needs `WEATHER_API_KEY`), is cached for 14.5 minutes, and is refreshed in the browser by `public/js/weather.js`. If the API fails, the widget says the weather is unavailable and the page still loads.
 
-- Responses are cached in server memory for 14.5 minutes, and simultaneous requests share one API call.
-- Calls time out after 2.5 seconds; after a failure the API is not called again for a minute.
-- Expired data is never shown: the widget says the weather is unavailable, and the page still renders.
-- `public/js/weather.js` refreshes the widget in the browser when the cache expires, and pauses while the tab is hidden.
+### Tests and Limitations
 
-### Routes
-
-All public:
-
-| Route | Returns |
-| --- | --- |
-| `GET /` | Home page. |
-| `GET /api/feed` | Next batch of feed cards as JSON. Same filters, plus `limit` and `skip`. |
-| `GET /weather-widget` | Home page widget HTML, for the browser refresh. |
-| `GET /weather-widget/small` | Article page widget HTML. |
-
-### Monitoring
-
-Weather failures are only logged to the console, not to `OperationalLog`.
-
-### Tests
-
-`npm test` runs the weather tests: the service's caching and failure handling (`weatherService.test.js`), the browser refresh (`weatherWidgetClient.test.js`), and the widget rendering (`weatherWidgetPartial.test.js`). The feed, search and filters have no automated tests.
-
-### Limitations
-
-- Weather is for one fixed location (Tel Aviv).
-- The weather cache is in server memory, so a restart clears it.
-- The "unseen" list is per browser and is lost when browser data is cleared.
+- `npm test` covers the weather service, the widget refresh, and the widget rendering. The feed has no automated tests.
+- Weather is for one fixed location, and its cache is cleared on server restart.
+- Weather failures are logged to the console only, not to `OperationalLog`.
 
 ## Member 3 – Article Page & Comments
 
